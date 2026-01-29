@@ -106,3 +106,11 @@ A Pull Request lets the programming lead review your changes before merging into
 
 If other people merged changes, update your branch:
 
+1. In Codespaces, open the terminal (**Terminal → New Terminal**)
+2. Run:
+   ```bash
+   git checkout main
+   git pull
+   git checkout your-branch-name
+   git merge main
+
