@@ -1,4 +1,4 @@
-# 🤖 Team Robot Code (FTC)
+# Silly Servos In-Progress Code
 
 Welcome to our robotics team’s robot code repository!  
 This repo is where we store our robot code, so everyone can collaborate, review changes, and keep a clean history.
