@@ -25,8 +25,8 @@ public class IndexerSubsystem {
 
     // switch to true if we start the robot with the magnet, needs to be accurate
     private static boolean previousMagnetState = false;
-    // current encoder value needs to be +- this amount to expected to regester the magnet
-    public static final int approxEncoderAccuracy;
+    // current encoder value needs to be +- this amount to expected to regester the magnet, approx value
+    public static final int approxEncoderAccuracy = 50;
     public static int magnetBasedOffset;
 
     // default value in case we start on the magnet, may be slightly inaccurate, but should fix itself after 1 rotation
