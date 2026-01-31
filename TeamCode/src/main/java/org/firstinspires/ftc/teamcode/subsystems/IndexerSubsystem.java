@@ -11,12 +11,14 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Configurable
 public class IndexerSubsystem {
-    public enum Selection { POSITION_1, POSITION_2, POSITION_3 }
+    public enum Selection {
+        POSITION_1, POSITION_2, POSITION_3
+    }
 
     @IgnoreConfigurable
-    private final DcMotorEx indexerMotor;    // motor with encoder controlling indexer
+    private final DcMotorEx indexerMotor; // motor with encoder controlling indexer
     @IgnoreConfigurable
-    private final Servo feedLeverServo;      // lever that feeds balls into intake
+    private final Servo feedLeverServo; // lever that feeds balls into intake
     @IgnoreConfigurable
     private final TouchSensor magnetSensor;
     // Manual mode removed
@@ -25,14 +27,17 @@ public class IndexerSubsystem {
 
     // switch to true if we start the robot with the magnet, needs to be accurate
     private static boolean previousMagnetState = false;
-    // current encoder value needs to be +- this amount to expected to regester the magnet, approx value
+    // current encoder value needs to be +- this amount to expected to regester the
+    // magnet, approx value
     public static final int approxEncoderAccuracy = 50;
     public static int magnetBasedOffset;
 
-    // default value in case we start on the magnet, may be slightly inaccurate, but should fix itself after 1 rotation
+    // default value in case we start on the magnet, may be slightly inaccurate, but
+    // should fix itself after 1 rotation
     public static int magnetRisingEdgePosition = 0;
 
-    // magnet positions in encoder ticks(note: define this position as the encoder tick when the magnet is centered)
+    // magnet positions in encoder ticks(note: define this position as the encoder
+    // tick when the magnet is centered)
     // !!Warning!! these are guessed values, need to update before using
     public static int magnetPosition1 = 0;
     public static int magnetPosition2 = 192;
@@ -76,26 +81,25 @@ public class IndexerSubsystem {
         this.feedLeverServo.setPosition(Math.min(leverIdlePos, leverMaxPos));
     }
 
-    public void updateMagnet()
-    {
+    public void updateMagnet() {
         // rising edge
-        if (!previousMagnetState && magnetSensor.isPressed())
-        {
+        if (!previousMagnetState && magnetSensor.isPressed()) {
             // at magnet 1 or 2
-            if((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy) && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy)
-              || (indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy) && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy))
-            {
+            if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
+                    && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy)
+                    || (indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy)
+                            && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy)) {
                 magnetRisingEdgePosition = indexerMotor.getCurrentPosition();
             }
         }
 
         // falling edge
-        else if (previousMagnetState && !magnetSensor.isPressed())
-        {
+        else if (previousMagnetState && !magnetSensor.isPressed()) {
             // at magnet 1
-            if((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy) && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy))
-            {
-                // calculate average to find encoder position of the magnet, not the rising/falling edge of it
+            if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
+                    && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy)) {
+                // calculate average to find encoder position of the magnet, not the
+                // rising/falling edge of it
                 int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
                 magnetBasedOffset = magnetPosition1 - average;
                 POSITION_1 += magnetBasedOffset;
@@ -109,9 +113,10 @@ public class IndexerSubsystem {
             }
 
             // at magnet 2
-            else if((indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy) && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy))
-            {
-                // calculate average to find encoder position of the magnet, not the rising/falling edge of it
+            else if ((indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy)
+                    && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy)) {
+                // calculate average to find encoder position of the magnet, not the
+                // rising/falling edge of it
                 int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
                 magnetBasedOffset = magnetPosition2 - average;
                 POSITION_1 += magnetBasedOffset;
@@ -124,8 +129,8 @@ public class IndexerSubsystem {
                 magnetPosition2 += magnetBasedOffset;
             }
         }
-    // update previous state for falling/rising edge
-    previousMagnetState = magnetSensor.isPressed();
+        // update previous state for falling/rising edge
+        previousMagnetState = magnetSensor.isPressed();
     }
 
     public void setLeverConfig(long pulseMs, double idle, double engaged) {
@@ -150,12 +155,15 @@ public class IndexerSubsystem {
         int target;
         switch (sel) {
             case POSITION_1:
-                target = POSITION_1; break;
+                target = POSITION_1;
+                break;
             case POSITION_2:
-                target = POSITION_2; break;
+                target = POSITION_2;
+                break;
             case POSITION_3:
             default:
-                target = POSITION_3; break;
+                target = POSITION_3;
+                break;
         }
         indexerMotor.setTargetPosition(target);
         indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -167,19 +175,24 @@ public class IndexerSubsystem {
         int target;
         switch (sel) {
             case POSITION_1:
-                target = COLLECTION_1; break;
+                target = COLLECTION_1;
+                break;
             case POSITION_2:
-                target = COLLECTION_2; break;
+                target = COLLECTION_2;
+                break;
             case POSITION_3:
             default:
-                target = COLLECTION_3; break;
+                target = COLLECTION_3;
+                break;
         }
         indexerMotor.setTargetPosition(target);
         indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         indexerMotor.setPower(0.6);
     }
 
-    public Selection getSelection() { return selection; }
+    public Selection getSelection() {
+        return selection;
+    }
 
     // Manual mode APIs removed
 
@@ -209,7 +222,7 @@ public class IndexerSubsystem {
     public String getStatus() {
         boolean busy = indexerMotor.getMode() == DcMotor.RunMode.RUN_TO_POSITION && indexerMotor.isBusy();
         return String.format("indexerSel=%s mode=%s busy=%s leverPulsing=%s",
-            selection, indexerMotor.getMode(), busy, leverPulsing);
+                selection, indexerMotor.getMode(), busy, leverPulsing);
     }
 
     /** Whether the indexer is currently moving toward a target position. */
@@ -237,7 +250,10 @@ public class IndexerSubsystem {
         }
         int target = base + deltaTicks;
         indexerMotor.setTargetPosition(target);
-        try { indexerMotor.setTargetPositionTolerance(1); } catch (Exception ignore) {}
+        try {
+            indexerMotor.setTargetPositionTolerance(1);
+        } catch (Exception ignore) {
+        }
         indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         indexerMotor.setPower(0.3);
     }
