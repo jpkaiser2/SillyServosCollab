@@ -258,5 +258,9 @@ public class IndexerSubsystem {
         indexerMotor.setPower(0.3);
     }
 
-    // Tuning helpers removed
+    // Tuning helpers
+    public boolean getMagnetState()
+    {
+        return previousMagnetState;
+    }
 }

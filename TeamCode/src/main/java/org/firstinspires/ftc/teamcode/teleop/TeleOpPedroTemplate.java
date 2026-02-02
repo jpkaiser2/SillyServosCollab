@@ -223,7 +223,7 @@ public class TeleOpPedroTemplate extends OpMode {
         }
         prevB = gamepad2.b;
 
-        // Maintain lever timing only; indexing queue disabled
+        // Maintain lever timing and magnet updates; indexing queue disabled
         indexer.update();
         // boolean moving = indexer.isMoving();
         // if (wasMovingLastUpdate && !moving) {
@@ -293,6 +293,8 @@ public class TeleOpPedroTemplate extends OpMode {
         flywheel.setPower(gamepad2.right_bumper ? 1.0 : 0.0);
 
         // Telemetry
+        telemetry.addData("magnetState", indexer.getMagnetState());
+        telemetry.addData("EncoderTicks", indexer.getCurrentPosition());
         telemetry.addData("slowModeHeld", slowModeHeld);
         telemetry.addData("robotCentricHeld", robotCentricHeld);
         telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
