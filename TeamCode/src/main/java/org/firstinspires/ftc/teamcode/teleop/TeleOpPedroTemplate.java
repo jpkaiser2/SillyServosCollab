@@ -27,7 +27,7 @@ import org.firstinspires.ftc.teamcode.subsystems.drive.PedroDrive;
  * - Keep calls to drive.setDriverInput(...) and drive.update() the same.
  */
 @TeleOp(name = "TeleOpMainPedro", group = "TeleOp")
-public class TeleOpPedroTemplate extends OpMode {
+public class MyTerribleCode extends OpMode {
 
     // HardwareMap names (edit these to match your configuration)
     private static final String FRONT_LEFT = "frontLeft";
@@ -51,24 +51,27 @@ public class TeleOpPedroTemplate extends OpMode {
     private FlywheelSubsystem flywheel;
     // Indexer preset control
     
-    private boolean prevUp = false, prevRight = false, prevDown = false;
-    private boolean prevX = false, prevA = false, prevB = false, prevIndex = false;
+    private String prevIndex = "";
+    private boolean intakeHold = false;
+    private boolean override = false;
+    private ElapsedTime overrideTime = new ElapsedTime();
 
-    // Collection action state
-    private boolean collectionInProgress = false;
-    private boolean waitingIndexer = false;
-    private final ElapsedTime collectionTimer = new ElapsedTime();
-    private final ElapsedTime servoTimer = new ElapsedTime();
-    private final ElapsedTime indexerWaitTimer = new ElapsedTime();
-    private boolean driveActive = false;
-    private boolean intakeActive = false;
-    private boolean servoPulseActive = false;
-    private long driveDurationMs = 700; // approx for ~5 inches; tune as needed
-    private long servoPulseMs = 250;    // slight dip duration
-    private double drivePower = 0.4;    // forward power during collection motion
-    private double intakeDipPos = 0.5;  // intake angle halfway down then up
-    private long indexerWaitMs = 4000;  // wait for indexer for 4 seconds before next steps
+    private double hoodInput = 0.0;
+    private double turretInput = 0.0;
 
+    // fixing ftc's very annoying code lol(bumpers are bools, triggers are doubles)
+    private double p1LeftBumperToDouble;
+    private double p1RightBumperToDouble;
+    private double p2LeftBumperToDouble;
+    private double p2RightBumperToDouble;
+    private final double triggerSense = 0.4;
+    
+    // Default values, wantedPattern is the pattern for the next 3 balls, indexerPattern is what is in the indexer
+    // possible values for indexerPattern=empty, purple, green, unknown(there is a ball, we don't know what color)
+    private String[] wantedPattern = {"purple", "green", "purple"}
+    private String[] indexerPattern = {"empty", "empty", "empty"}
+    private boolean patternChecking = false;
+    
     // Software indexing state (disabled: color sensor-based indexing)
     /*
     private enum BallColor { BLUE, PURPLE, UNKNOWN }
@@ -81,7 +84,8 @@ public class TeleOpPedroTemplate extends OpMode {
 
 
     @Override
-    public void init() {
+    public void init() 
+    {
         HardwareMap hw = hardwareMap;
         // Use Pedro Pathing Follower for teleop drive
         drive = new PedroDrive(hw);
@@ -99,132 +103,221 @@ public class TeleOpPedroTemplate extends OpMode {
 
     @Override
     public void loop() {
-        // Slow mode held while LB
-        // held via LB
-        boolean slowModeHeld = gamepad1.left_bumper;
+        // fixing ftc's bad coding(bumpers are bools, triggers are doubles), making usable doubles for bumpers
+        // if you need to input a bumper into a function expecting a trigger(and thus a double), it will not work
+        if (gamepad1.left_bumper)
+            p1LeftBumperToDouble = 1.0;
+        else
+            p1LeftBumperToDouble = 0.0;
+        if (gamepad1.right_bumper)
+            p1RightBumperToDouble = 1.0;
+        else
+            p1RightBumperToDouble = 0.0;
+        if (gamepad2.left_bumper)
+            p2LeftBumperToDouble = 1.0;
+        else
+            p2LeftBumperToDouble = 0.0;
+        if (gamepad2.right_bumper)
+            p2RightBumperToDouble = 1.0;
+        else
+            p2RightBumperToDouble = 0.0;
 
+
+        // toggle override after 1 second
+        if (gamepad2.right_trigger > triggerSense)
+        {
+            if (overrideTime.seconds() >= 1)
+            {
+                override = !override;
+                overrideTime.reset();
+            }
+        }
+        else
+        {
+            overrideTime.reset()
+        }
+
+        
         // Read drive inputs (FTC sticks: up is -y)
         double y = -gamepad1.left_stick_y;  // forward
         double x = gamepad1.left_stick_x;   // strafe
         double rx = gamepad1.right_stick_x; // rotation
 
-        if (slowModeHeld) {
-            // scale while slow mode
-            double slowFactor = 0.4;
-            y *= slowFactor;
-            x *= slowFactor;
-            rx *= slowFactor;
-        }
-
-        // Hold RB to use robot-centric, else field-centric
-        boolean robotCentricHeld = gamepad1.right_bumper;
-
-        // Override driver input during collection drive segment
-        if (driveActive) {
-            x = 0.0;
-            y = drivePower;
-            rx = 0.0;
-            robotCentricHeld = true; // force robot-centric while auto driving forward
-        }
-
-        drive.setDriverInput(x, y, rx, !robotCentricHeld);
+        drive.setDriverInput(x, y, rx, false);
         drive.update();
 
+        hoodInput = gamepad2.left_stick_y;
+        turretInput = gamepad2.right_stick_x;
+        
         // Mechanisms
         // Turret: rotate with right_stick_x, angle with left_stick_y
+        // Zach working on it, make sure to move to override/non-override code
         turret.setManualInput(gamepad2.right_stick_x);
         turret.setAngleInput(gamepad2.left_stick_y);
         turret.update();
 
-        // Intake: motor with triggers, rotation servo with left_stick_x
-        if (intakeActive) {
-            intake.setTriggers(0.0, 1.0); // run intake in reverse during collection
-        } else {
-            intake.setTriggers(gamepad2.right_trigger, gamepad2.left_trigger);
+        // intaking
+        intake.setTriggers(p1LeftBumperToDouble, gamepad1.left_trigger);
+        if (!intakeHold)
+        {
+            if (gamepad1.right_trigger > triggerSens)
+            {
+                intake.setRotationInput(-1);
+            }
+            else if (gamepad1.right_bumper)
+            {
+                intake.setRotationInput(1);
+            }
         }
-        intake.setRotationInput(gamepad2.left_stick_x);
 
-        // Feed lever pulse (in Indexer) on gamepad2.y
-        indexer.handleLeverButton(gamepad2.y);
 
-        // Manual tick nudging on gamepad1: X forward (+2), A back (-2)
-        if (gamepad2.x && !prevX) {
-            indexer.nudgeTicks(+2);
+        // indexer to intake positions
+        if (gamepad1.dpad_left && prevIndex != "P1Left")
+        {
+            indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_1);
+            intakeHold = true;
+            intake.setRotationInput(-1);
         }
-        prevX = gamepad2.x;
-        if (gamepad2.a && !prevA) {
-            indexer.nudgeTicks(-2);
+        else if (gamepad1.dpad_down && prevIndex != "P1Down")
+        {
+            indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_2); 
+            intakeHold = true;
+            intake.setRotationInput(-1);
         }
-        prevA = gamepad2.a;
+        else if (gamepad1.dpad_right && prevIndex != "P1Right")
+        {
+            indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_3);   
+            intakeHold = true;
+            intake.setRotationInput(-1);
+        }
 
-        // Color selection disabled
-        // if (gamepad1.x && !prevX) {
-        //     intake.setHoldUp(true);
-        //     int targetIndex = findColorIndex(BallColor.BLUE);
-        //     if (targetIndex >= 0) {
-        //         int deltaForward = (targetIndex - head + 3) % 3;
-        //         pendingSteps += deltaForward;
-        //     }
-        // } else if (gamepad1.b && !prevB) {
-        //     intake.setHoldUp(true);
-        //     int targetIndex = findColorIndex(BallColor.PURPLE);
-        //     if (targetIndex >= 0) {
-        //         int deltaForward = (targetIndex - head + 3) % 3;
-        //         pendingSteps += deltaForward;
-        //     }
-        // }
-        // prevX = gamepad1.x;
-        // prevB = gamepad1.b;
-
-        // Presets via D-Pad, hold LB for collection presets
-        boolean collectionMod = gamepad2.left_bumper; // modifier for collection positions
-        if (gamepad2.dpad_up && !prevUp) {
-            // Ensure intake is up before moving indexer to avoid interference
-            intake.setHoldUp(true);
-            if (collectionMod) {
-                indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_1);
-            } else {
+        // Override button
+        if (override)
+        {
+            // indexer to launch positions
+            if (gamepad2.dpad_left && prevIndex != "P2Left")
+            {
                 indexer.setSelection(IndexerSubsystem.Selection.POSITION_1);
+                intakeHold = true;
+                intake.setRotationInput(-1);
             }
-        } else if (gamepad2.dpad_right && !prevRight) {
-            intake.setHoldUp(true);
-            if (collectionMod) {
-                indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_2);
-            } else {
+            else if (gamepad2.dpad_down && prevIndex != "P2Down")
+            {
                 indexer.setSelection(IndexerSubsystem.Selection.POSITION_2);
+                intakeHold = true;
+                intake.setRotationInput(-1);
             }
-        } else if (gamepad2.dpad_down && !prevDown) {
-            intake.setHoldUp(true);
-            if (collectionMod) {
-                indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_3);
-            } else {
+            else if (gamepad2.dpad_right && prevIndex != "P2Right")
+            {
                 indexer.setSelection(IndexerSubsystem.Selection.POSITION_3);
+                intakeHold = true;
+                intake.setRotationInput(-1);
             }
+            
+            // ramp control
+            if (gamepad2.left_bumper)
+            {
+                // lower ramp
+            }
+            else
+            {
+                // raise ramp
+            }
+
+             // TODO: manual turret, hood, motor close/far(no hood)
+        }
+        else
+        {
+            // auto ramp control
+            if ((gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) && !intakeHold)
+            {
+                // lower ramp
+            }
+            else
+            {
+                // raise ramp
+            }
+
+            // launch sequence
+            if (gamepad2.y && !patternChecking)
+            {
+                // launching sequence in subsystem
+            }
+
+            // set wanted pattern
+            if (gamepad2.x)
+            {
+                wantedPattern = {"green", "purple", "purple"}
+            }
+            else if (gamepad2.a)
+            {
+                wantedPattern = {"purple", "green", "purple"}
+            }
+            else if (gamepad2.b)
+            {
+                wantedPattern = {"purple", "purple", "green"}
+            }
+
+            if (gamepad2.x || gamepad2.a || gamepad2.b)
+            {
+                // check pattern in indexer
+            }
+
+            // TODO: motor close/far with hood auto aim
         }
 
-        prevUp = gamepad2.dpad_up;
-        prevRight = gamepad2.dpad_right;
-        prevDown = gamepad2.dpad_down;
-        // Collection action trigger: B + corresponding D-pad (up/right/down)
-        if (!collectionInProgress && gamepad2.b && !prevB) {
-            IndexerSubsystem.Selection sel = null;
-            if (gamepad2.dpad_up) sel = IndexerSubsystem.Selection.POSITION_1;
-            else if (gamepad2.dpad_right) sel = IndexerSubsystem.Selection.POSITION_2;
-            else if (gamepad2.dpad_down) sel = IndexerSubsystem.Selection.POSITION_3;
-
-            if (sel != null) {
-                // Step 1: move indexer to collection position first
-                intake.setHoldUp(true);
-                indexer.setCollectionSelection(sel);
-                collectionInProgress = true;
-                waitingIndexer = true;
-                indexerWaitTimer.reset();
-            }
-        }
-        prevB = gamepad2.b;
-
-        // Maintain lever timing and magnet updates; indexing queue disabled
+        // Maintain lever timing and magnet
+        // pulse launch arm
+        indexer.handleLeverButton(gamepad2.dpad_up);
         indexer.update();
+
+            // Normal auto-release of intake hold when indexer finishes
+            if (!indexer.isMoving()) 
+            {
+                intakeHold = false;
+            }
+
+        // Telemetry
+        telemetry.addData("Override State", override);
+        telemetry.addData("magnetState", indexer.getMagnetState());
+        telemetry.addData("EncoderTicks", indexer.getCurrentPosition());
+        telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
+        telemetry.addData("Turret", turret.getStatus());
+        telemetry.addData("Intake", intake.getStatus());
+        telemetry.addData("Indexer", indexer.getStatus());
+        telemetry.addData("Indexer Presets", String.format("P1=%d P2=%d P3=%d",
+            IndexerSubsystem.POSITION_1,
+            IndexerSubsystem.POSITION_2,
+            IndexerSubsystem.POSITION_3));
+        telemetry.addData("Collection Presets", String.format("C1=%d C2=%d C3=%d",
+            IndexerSubsystem.COLLECTION_1,
+            IndexerSubsystem.COLLECTION_2,
+            IndexerSubsystem.COLLECTION_3));
+        telemetry.addData("Indexer Enc", String.format("cur=%d tgt=%d",
+            indexer.getCurrentPosition(),
+            indexer.getTargetPosition()));
+        // telemetry.addData("Buffer", String.format("head=%d slots=[%s,%s,%s]", head, slots[0], slots[1], slots[2]));
+        telemetry.addData("Flywheel", flywheel.getStatus());
+        telemetry.update();
+
+
+        if (gamepad1.dpad_left)
+            prevIndex = "P1Left";
+        else if (gamepad1.dpad_down)
+            prevIndex = "P1Down";
+        else if (gamepad1.dpad_right)
+            prevIndex = "P1Right";
+        else if (gamepad2.dpad_left)
+            prevIndex = "P2Left";
+        else if (gamepad2.dpad_down)
+            prevIndex = "P2Down";
+        else if (gamepad2.dpad_right)
+            prevIndex = "P2Right";
+    }
+}
+// Old code(seems to be for color detection mainly), might use later
+
+
         // boolean moving = indexer.isMoving();
         // if (wasMovingLastUpdate && !moving) {
         //     // Just arrived: sample color at head
@@ -249,83 +342,16 @@ public class TeleOpPedroTemplate extends OpMode {
         //     pendingSteps--;
         // }
 
-        // Collection action progression
-        if (collectionInProgress) {
-            if (waitingIndexer) {
-                // Wait 4 seconds AND for indexer to finish before starting next phase
-                if (indexerWaitTimer.milliseconds() >= indexerWaitMs && !indexer.isMoving()) {
-                    waitingIndexer = false;
-                    // Phase 1: dip intake halfway down
-                    servoPulseActive = true;
-                    servoTimer.reset();
-                    intake.setHoldUp(false); // allow angle movement
-                    double jHalf = (intakeDipPos * 2.0) - 1.0; // 0..1 -> -1..1
-                    intake.setRotationInput(jHalf);
-                }
-            } else {
-                // Phase 1 duration: hold halfway down for servoPulseMs
-                if (servoPulseActive && servoTimer.milliseconds() >= servoPulseMs) {
-                    servoPulseActive = false;
-                    // Phase 2: start drive forward + intake reverse simultaneously
-                    collectionTimer.reset();
-                    driveActive = true;
-                    intakeActive = true;
-                }
-                // Phase 2 duration: drive forward while intake reverse
-                if (driveActive && collectionTimer.milliseconds() >= driveDurationMs) {
-                    driveActive = false;
-                    // Stop intake and return servo to up
-                    intakeActive = false;
-                    intake.setTriggers(0.0, 0.0);
-                    intake.setHoldUp(true);
-                    // End collection
-                    collectionInProgress = false;
-                }
-            }
-        } else {
-            // Normal auto-release of intake hold when indexer finishes
-            if (!indexer.isMoving() && intake.isHoldUp()) {
-                intake.setHoldUp(false);
-            }
-        }
 
-        // Flywheel: run while gamepad2.right_bumper held
-        flywheel.setPower(gamepad2.right_bumper ? 1.0 : 0.0);
-
-        // Telemetry
-        telemetry.addData("magnetState", indexer.getMagnetState());
-        telemetry.addData("EncoderTicks", indexer.getCurrentPosition());
-        telemetry.addData("slowModeHeld", slowModeHeld);
-        telemetry.addData("robotCentricHeld", robotCentricHeld);
-        telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
-        telemetry.addData("Turret", turret.getStatus());
-        telemetry.addData("Intake", intake.getStatus());
-        telemetry.addData("Indexer", indexer.getStatus());
-        telemetry.addData("Indexer Presets", String.format("P1=%d P2=%d P3=%d",
-            IndexerSubsystem.POSITION_1,
-            IndexerSubsystem.POSITION_2,
-            IndexerSubsystem.POSITION_3));
-        telemetry.addData("Collection Presets", String.format("C1=%d C2=%d C3=%d",
-            IndexerSubsystem.COLLECTION_1,
-            IndexerSubsystem.COLLECTION_2,
-            IndexerSubsystem.COLLECTION_3));
-        telemetry.addData("Indexer Enc", String.format("cur=%d tgt=%d",
-            indexer.getCurrentPosition(),
-            indexer.getTargetPosition()));
-        telemetry.addData("Collect", String.format("inProg=%s waitIdx=%s drive=%s intake=%s servoPulse=%s",
-            collectionInProgress, waitingIndexer, driveActive, intakeActive, servoPulseActive));
-        // telemetry.addData("Buffer", String.format("head=%d slots=[%s,%s,%s]", head, slots[0], slots[1], slots[2]));
-        telemetry.addData("Flywheel", flywheel.getStatus());
-        telemetry.update();
-    }
-    // private int findColorIndex(BallColor desired) {
+// private int findColorIndex(BallColor desired) {
     //     for (int i = 0; i < 3; i++) {
     //         if (slots[i] == desired) return i;
     //     }
     //     return -1;
     // }
 
-    // private void sampleAndStoreColorAtHead() {
+
+// private void sampleAndStoreColorAtHead() {
     //     if (colorSensor == null) return;
     //     try {
     //         NormalizedRGBA colors = colorSensor.getNormalizedColors();
@@ -343,4 +369,21 @@ public class TeleOpPedroTemplate extends OpMode {
     //         slots[head] = detected;
     //     } catch (Exception ignore) { /* leave UNKNOWN */ }
     // }
-}
+
+
+// Color selection disabled
+        // if (gamepad1.x && !prevX) {
+        //     intake.setHoldUp(true);
+        //     int targetIndex = findColorIndex(BallColor.BLUE);
+        //     if (targetIndex >= 0) {
+        //         int deltaForward = (targetIndex - head + 3) % 3;
+        //         pendingSteps += deltaForward;
+        //     }
+        // } else if (gamepad1.b && !prevB) {
+        //     intake.setHoldUp(true);
+        //     int targetIndex = findColorIndex(BallColor.PURPLE);
+        //     if (targetIndex >= 0) {
+        //         int deltaForward = (targetIndex - head + 3) % 3;
+        //         pendingSteps += deltaForward;
+        //     }
+        // }
