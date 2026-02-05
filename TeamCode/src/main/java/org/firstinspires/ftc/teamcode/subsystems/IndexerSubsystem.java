@@ -265,4 +265,11 @@ public class IndexerSubsystem {
     {
         return previousMagnetState;
     }
+
+    // added to help us test magnet stuff
+    public void slowMove(double speed)
+    {
+        indexerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        indexerMotor.setPower(speed);
+    }
 }
