@@ -74,13 +74,6 @@ public class AprilTagWebcam {
         if (detections != null) detectedTags.addAll(detections);
     }
 
-    public double getBearing(){
-        this.update();
-        AprilTagDetection target = this.getTagById(targetTagId);
-        return estimateBearingFromPixels(target.center.x,640,70)
-        
-    }
-
     /** Immutable view (do not modify). */
     public List<AprilTagDetection> getDetectedTags() {
         return Collections.unmodifiableList(detectedTags);
