@@ -296,6 +296,20 @@ public class TeleOpPedroTemplate extends OpMode {
         // Flywheel: run while gamepad2.right_bumper held
         flywheel.setPower(gamepad2.right_bumper ? 1.0 : 0.0);
 
+        //slow motor move for testing
+        if (gamepad1.left_trigger > 0.4)
+        {
+            indexer.slowMove(-0.05)
+        }
+        else if (gamepad1.right_trigger > 0.4)
+        {
+            indexer.slowMove(0.05);
+        }
+        else
+        {
+            indexer.slowMove(0);
+        }
+
         // Telemetry
         telemetry.addData("slowModeHeld", slowModeHeld);
         telemetry.addData("robotCentricHeld", robotCentricHeld);

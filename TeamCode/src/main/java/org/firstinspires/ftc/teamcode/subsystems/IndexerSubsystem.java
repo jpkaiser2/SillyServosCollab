@@ -26,10 +26,9 @@ public class IndexerSubsystem {
 
     // Magnet sensor logic
 
-    // switch to true if we start the robot with the magnet, needs to be accurate
+    // switch to true if we start the robot with the magnet
     private static boolean previousMagnetState = false;
-    // current encoder value needs to be +- this amount to expected to regester the
-    // magnet, approx value
+    // current encoder value needs to be +- this amount to expected to regester the magnet, approx value
     public static final int approxEncoderAccuracy = 50;
     public static int magnetBasedOffset;
 
@@ -40,7 +39,7 @@ public class IndexerSubsystem {
     // magnet positions in encoder ticks(note: define this position as the encoder
     // tick when the magnet is centered)
     // !!Warning!! these are guessed values, need to update before using
-    public static int magnetPosition1 = 0;
+    public static int magnetPosition1 = 77;
     public static int magnetPosition2 = 192;
 
     // Preset positions in encoder ticks (user-provided; tune as needed)
@@ -50,7 +49,7 @@ public class IndexerSubsystem {
 
     // Secondary collection positions in encoder ticks
     public static int COLLECTION_1 = 429;
-    public static int COLLECTION_2 = 332;
+    public static int COLLECTION_2 = 48;
     public static int COLLECTION_3 = 241;
 
     @IgnoreConfigurable
@@ -268,5 +267,12 @@ public class IndexerSubsystem {
     public boolean getMagnetState()
     {
         return previousMagnetState;
+    }
+
+    // added to help us test magnet stuff
+    public void slowMove(double speed)
+    {
+        indexerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        indexerMotor.setPower(speed);
     }
 }
