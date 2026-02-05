@@ -85,7 +85,7 @@ public class TeleOpPedroTemplate extends OpMode {
         HardwareMap hw = hardwareMap;
         // Use Pedro Pathing Follower for teleop drive
         drive = new PedroDrive(hw);
-        turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE, telemetry);
+        turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE);
         intake = new IntakeSubsystem(hw, INTAKE, INTAKE_ANGLE);
         indexer = new IndexerSubsystem(hw, INDEXER, FEED_LEVER);
         flywheel = new FlywheelSubsystem(hw, FLYWHEEL);
@@ -132,13 +132,9 @@ public class TeleOpPedroTemplate extends OpMode {
 
         // Mechanisms
         // Turret: rotate with right_stick_x, angle with left_stick_y
-        if (gamepad2.left_bumper){
-        turret.updateManual(gamepad2.right_stick_x,gamepad2.left_stick_y);
-        }
-        else{
-        //turret auto aim
-        turret.updateAutoTurret();
-        }
+        turret.setManualInput(gamepad2.right_stick_x);
+        turret.setAngleInput(gamepad2.left_stick_y);
+        turret.update();
 
         // Intake: motor with triggers, rotation servo with left_stick_x
         if (intakeActive) {
@@ -227,7 +223,7 @@ public class TeleOpPedroTemplate extends OpMode {
         }
         prevB = gamepad2.b;
 
-        // Maintain lever timing only; indexing queue disabled
+        // Maintain lever timing and magnet updates; indexing queue disabled
         indexer.update();
         // boolean moving = indexer.isMoving();
         // if (wasMovingLastUpdate && !moving) {
@@ -299,7 +295,7 @@ public class TeleOpPedroTemplate extends OpMode {
         //slow motor move for testing
         if (gamepad1.left_trigger > 0.4)
         {
-            indexer.slowMove(-0.05)
+            indexer.slowMove(-0.05);
         }
         else if (gamepad1.right_trigger > 0.4)
         {
@@ -311,6 +307,8 @@ public class TeleOpPedroTemplate extends OpMode {
         }
 
         // Telemetry
+        telemetry.addData("magnetState", indexer.getMagnetState());
+        telemetry.addData("EncoderTicks", indexer.getCurrentPosition());
         telemetry.addData("slowModeHeld", slowModeHeld);
         telemetry.addData("robotCentricHeld", robotCentricHeld);
         telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
