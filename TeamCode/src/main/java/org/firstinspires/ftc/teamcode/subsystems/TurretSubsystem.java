@@ -16,6 +16,7 @@ public class TurretSubsystem {
     private static final double TICKS_PER_TURRET_REV = MOTOR_TICKS_PER_REV * TURRET_GEAR_RATIO;
 
 
+    private AprilTagWebcam camera = new AprilTagWebcam();
     private double rotationPowerCmd = 0.0;
     private double maxPower = 0.6;
     // Holds the last commanded turret angle servo position (0..1)
@@ -29,10 +30,10 @@ public class TurretSubsystem {
     private double minDeg = -180.0;
     private double maxDeg = 180.0;
 
-    public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName) {
+    public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName, Telemetry telemetry) {
         this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
         this.turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        this.turretMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        this.turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         this.turretMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
         this.turretAngleServo = hardwareMap.get(Servo.class, turretAngleServoName);
@@ -40,6 +41,7 @@ public class TurretSubsystem {
 
         // Soft-zero at init: turret angle will be 0 at whatever position you are in during init.
         zeroTurretHere();
+        camera.init(hw,telemetry);
     }
 
     /** Call this when turret is physically pointing "forward" to define 0° */
@@ -50,7 +52,7 @@ public class TurretSubsystem {
     /** Optional: if you want to reset encoder counts (not required) */
     public void resetEncoderHard() {
         turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        turretMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         zeroTicks = 0;
     }
 
@@ -77,10 +79,15 @@ public class TurretSubsystem {
 
     /** Adjust hood/angle servo by joystick -1..1 mapped to 0..1. Holds position in deadband. */
     public void setAngleInput(double joystick) {
-        double j = clip(joystick, -1.0, 1.0);
+        /*double j = clip(joystick, -1.0, 1.0);
         if (Math.abs(j) > ANGLE_DEADBAND) {
             double pos = (j * -0.5) + 0.5; // up is -y
             angleServoPos = clip(pos, 0.0, 1.0);
+            */
+            if (Math.abs(joystick) > ANGLE_DEADBAND)
+                {
+                    angleServoPos = (-1 * joystick - 1) / 2.0;
+                }
         }
         // else: hold previous angleServoPos
     }
@@ -102,8 +109,11 @@ public class TurretSubsystem {
     }
 
     // ---- Update ----
-    public void update() {
+    public void updateManual(rightStickX,leftStickY) {
         // Optional soft limit clamp: prevent driving further into limits
+
+        this.setManualInput(rightStickX);
+        this.setAngleInput(leftStickY);
         double deg = getTurretAngleDeg();
         double p = rotationPowerCmd;
 
@@ -115,6 +125,11 @@ public class TurretSubsystem {
         // Maintain the last commanded angle servo position
         turretAngleServo.setPosition(angleServoPos);
     }
+    
+    public void updateAutoTurret() {
+        runToAngle(camera.getbearing());      
+        //TODO: add the kinematics
+    }
 
     public String getStatus() {
         return String.format("turretPower=%.2f angleServo=%.2f yawDeg=%.1f ticks=%d",
@@ -123,5 +138,18 @@ public class TurretSubsystem {
 
     private static double clip(double v, double lo, double hi) {
         return Math.max(lo, Math.min(hi, v));
+    }
+    public void runToAngle(double angle){
+        int ticks = (TICKS_PER_TURRET_REV/360)*angle;
+        turretMotor.setTargetPosition(zeroTicks + ticks);
+    }
+    public AprilTagWebcam getCamera(){
+        return camera;
+    }
+    public int getTargetID(){
+        return camera.getTargetTagID();
+    }
+    public void setTargetID(int ID){
+        camera.setTargetTagID(ID)
     }
 }

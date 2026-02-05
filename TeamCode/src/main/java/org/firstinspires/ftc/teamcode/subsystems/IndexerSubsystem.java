@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Configurable
@@ -79,7 +80,9 @@ public class IndexerSubsystem {
         this.feedLeverServo.setDirection(Servo.Direction.REVERSE);
         this.feedLeverServo.setPosition(Math.min(leverIdlePos, leverMaxPos));
 
+        // Map the magnet sensor (digital touch-style hall sensor)
         this.magnetSensor = hardwareMap.get(TouchSensor.class, "magnet");
+        // Initialize previous state in case we boot while on the magnet
         previousMagnetState = magnetSensor.isPressed();
     }
 
