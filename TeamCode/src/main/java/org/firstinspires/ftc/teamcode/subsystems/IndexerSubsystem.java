@@ -40,17 +40,17 @@ public class IndexerSubsystem {
     // tick when the magnet is centered)
     // !!Warning!! these are guessed values, need to update before using
     public static int magnetPosition1 = 77;
-    public static int magnetPosition2 = 192;
+    public static int magnetPosition2 = 175;
 
     // Preset positions in encoder ticks (user-provided; tune as needed)
     public static int POSITION_1 = 0;
-    public static int POSITION_2 = 192;
-    public static int POSITION_3 = 94;
+    public static int POSITION_2 = 194;
+    public static int POSITION_3 = 98;
 
     // Secondary collection positions in encoder ticks
-    public static int COLLECTION_1 = 429;
+    public static int COLLECTION_1 = 148;
     public static int COLLECTION_2 = 48;
-    public static int COLLECTION_3 = 241;
+    public static int COLLECTION_3 = 243;
 
     @IgnoreConfigurable
     private Selection selection = Selection.POSITION_2; // default to middle
