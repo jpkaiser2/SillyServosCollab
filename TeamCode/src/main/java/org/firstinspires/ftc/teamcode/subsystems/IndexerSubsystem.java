@@ -25,10 +25,9 @@ public class IndexerSubsystem {
 
     // Magnet sensor logic
 
-    // switch to true if we start the robot with the magnet, needs to be accurate
+    // switch to true if we start the robot with the magnet
     private static boolean previousMagnetState = false;
-    // current encoder value needs to be +- this amount to expected to regester the
-    // magnet, approx value
+    // current encoder value needs to be +- this amount to expected to regester the magnet, approx value
     public static final int approxEncoderAccuracy = 50;
     public static int magnetBasedOffset;
 
@@ -79,6 +78,9 @@ public class IndexerSubsystem {
         this.feedLeverServo = hardwareMap.get(Servo.class, feedLeverServoName);
         this.feedLeverServo.setDirection(Servo.Direction.REVERSE);
         this.feedLeverServo.setPosition(Math.min(leverIdlePos, leverMaxPos));
+
+        this.magnetSensor = hardwareMap.get(TouchSensor.class, "magnet");
+        previousMagnetState = magnetSensor.isPressed();
     }
 
     public void updateMagnet() {
