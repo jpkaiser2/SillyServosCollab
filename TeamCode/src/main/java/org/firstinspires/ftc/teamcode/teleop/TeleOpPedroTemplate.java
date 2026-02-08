@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import android.graphics.Color;
 */
 
+import org.firstinspires.ftc.teamcode.subsystems.LaunchSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IndexerSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.FlywheelSubsystem;
@@ -50,6 +51,7 @@ public class MyTerribleCode extends OpMode {
     private IntakeSubsystem intake;
     private IndexerSubsystem indexer;
     private FlywheelSubsystem flywheel;
+    private LaunchSubsystem launch;
     // Indexer preset control
     
     private String prevIndex = "";
@@ -71,7 +73,8 @@ public class MyTerribleCode extends OpMode {
     // possible values for indexerPattern=empty, purple, green, unknown(there is a ball, we don't know what color)
     private String[] wantedPattern = {"purple", "green", "purple"}
     private String[] indexerPattern = {"empty", "empty", "empty"}
-    private boolean patternChecking = false;
+    private boolean checkingPattern = false;
+    private boolean autoLaunching = false;
     
     // Software indexing state (disabled: color sensor-based indexing)
     /*
@@ -94,6 +97,7 @@ public class MyTerribleCode extends OpMode {
         intake = new IntakeSubsystem(hw, INTAKE, INTAKE_ANGLE, RAMP);
         indexer = new IndexerSubsystem(hw, INDEXER, FEED_LEVER);
         flywheel = new FlywheelSubsystem(hw, FLYWHEEL);
+        launch = new LaunchSubsystem(indexer);
         // Enable dashboard configurables for indexer presets
         try { PanelsConfigurables.INSTANCE.refreshClass(indexer); } catch (Exception ignore) {}
         // Color sensor disabled
@@ -161,7 +165,7 @@ public class MyTerribleCode extends OpMode {
         intake.setTriggers(p1LeftBumperToDouble, gamepad1.left_trigger);
         if (!intakeHold)
         {
-            if (gamepad1.right_trigger > triggerSens)
+            if (gamepad1.right_trigger > triggerSense)
             {
                 intake.setRotationInput(-1);
             }
@@ -172,31 +176,28 @@ public class MyTerribleCode extends OpMode {
         }
 
 
-        // indexer to intake positions
-        if (gamepad1.dpad_left && prevIndex != "P1Left")
+        // set indexer positions
+        if (!(checkingPattern || autoLaunching))
         {
-            indexer.setIndexerPosition("Intake1");
-            intakeHold = true;
-            intake.setRotationInput(-1);
-        }
-        else if (gamepad1.dpad_down && prevIndex != "P1Down")
-        {
-            indexer.setIndexerPosition("Intake2"); 
-            intakeHold = true;
-            intake.setRotationInput(-1);
-        }
-        else if (gamepad1.dpad_right && prevIndex != "P1Right")
-        {
-            indexer.setIndexerPosition("Intake3");
-            intakeHold = true;
-            intake.setRotationInput(-1);
-        }
-
-        // Override button
-        if (override)
-        {
-            // indexer to launch positions
-            if (gamepad2.dpad_left && prevIndex != "P2Left")
+            if (gamepad1.dpad_left && prevIndex != "P1Left")
+            {
+                indexer.setIndexerPosition("Intake1");
+                intakeHold = true;
+                intake.setRotationInput(-1);
+            }
+            else if (gamepad1.dpad_down && prevIndex != "P1Down")
+            {
+                indexer.setIndexerPosition("Intake2"); 
+                intakeHold = true;
+                intake.setRotationInput(-1);
+            }
+            else if (gamepad1.dpad_right && prevIndex != "P1Right")
+            {
+                indexer.setIndexerPosition("Intake3");
+                intakeHold = true;
+                intake.setRotationInput(-1);
+            }
+            else if (gamepad2.dpad_left && prevIndex != "P2Left")
             {
                 indexer.setIndexerPosition("Launch1");
                 intakeHold = true;
@@ -209,14 +210,24 @@ public class MyTerribleCode extends OpMode {
                 intake.setRotationInput(-1);
             }
             else if (gamepad2.dpad_right && prevIndex != "P2Right")
-            {
+            {                
                 indexer.setIndexerPosition("Launch3");
                 intakeHold = true;
                 intake.setRotationInput(-1);
             }
-            
+
+            // pulse launch arm
+            indexer.handleLeverButton(gamepad2.dpad_up);
+        }
+        else 
+        {
+            indexer.handleLeverButton(false);
+        }
+        // Override button
+        if (override)
+        {
             // ramp control
-            if (gamepad2.left_bumper)
+            if (gamepad2.left_bumper || gamepad1.left_bumper || gamepad1.left_trigger > triggerSense)
             {
                 // lower ramp
                 intake.setRampPosition(-1);
@@ -226,8 +237,8 @@ public class MyTerribleCode extends OpMode {
                 // raise ramp
                 intake.setRampPosition(1);
             }
-
-             // TODO: manual turret, hood, motor close/far(no hood)
+            // TODO: once turret is wrriten, do manual turret/hood controls and manual flywheel speed
+            // variables: hoodInput, turretInput, gamepad2.right_bumper=close launch, gamepad2.right_trigger > triggerSense=far launch
         }
         else
         {
@@ -242,45 +253,76 @@ public class MyTerribleCode extends OpMode {
                 // raise ramp
                 intake.setRampPosition(1);
             }
+            // TODO: once turret is written, call auto update with flywheel launch
+            // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense
+        }
 
-            // launch sequence
-            if (gamepad2.y && !patternChecking)
+        // launch sequence
+        if (gamepad2.y)
+        {
+            if (override && gamepad2.right_trigger > triggerSense && autoLaunching)
             {
-                // launching sequence in subsystem
+                launch.stopLaunch();
             }
+            else if (!autoLaunching)
+            {
+                launch.startlaunch(wantedPattern, indexerPattern);
+            }
+            if (autoLaunching)
+            {
+                indexerPattern = launch.getIndexerPattern();
+            }
+        }
+        // pattern sequence
+        else if (gamepad2.x || gamepad2.a || gamepad2.b)
+        {
+            if (override && gamepad2.right_trigger > triggerSense && checkingPattern)
+            {
+                // stop checking patetrn
+            }
+            else if (!checkingPattern)
+            {
+                // check pattern
+            }
+        }
 
-            // set wanted pattern
-            if (gamepad2.x)
-            {
-                wantedPattern = {"green", "purple", "purple"}
-            }
-            else if (gamepad2.a)
-            {
-                wantedPattern = {"purple", "green", "purple"}
-            }
-            else if (gamepad2.b)
-            {
-                wantedPattern = {"purple", "purple", "green"}
-            }
-
-            if (gamepad2.x || gamepad2.a || gamepad2.b)
-            {
-                // check pattern in indexer
-            }
-
-            // TODO: motor close/far with hood auto aim
+        // set wanted pattern
+        if (gamepad2.x)
+        {
+            wantedPattern = {"green", "purple", "purple"}
+        }
+        else if (gamepad2.a)
+        {
+            wantedPattern = {"purple", "green", "purple"}
+        }
+        else if (gamepad2.b)
+        {
+            wantedPattern = {"purple", "purple", "green"}
         }
 
         // Maintain lever timing and magnet
-        // pulse launch arm
-        indexer.handleLeverButton(gamepad2.dpad_up);
         indexer.update();
 
-            // Normal auto-release of intake hold when indexer finishes
-            if (!indexer.isMoving()) 
-            {
-                intakeHold = false;
-            }
+        // Normal auto-release of intake hold when indexer finishes
+        if (!indexer.isMoving()) 
+        {
+            intakeHold = false;
+        }
+
+        if (gamepad1.dpad_left)
+            prevIndex = "P1Left";
+        else if (gamepad1.dpad_down)
+            prevIndex = "P1Down";
+        else if (gamepad1.dpad_right)
+            prevIndex = "P1Right";
+        else if (gamepad2.dpad_left)
+            prevIndex = "P2Left";
+        else if (gamepad2.dpad_down)
+            prevIndex = "P2Down";
+        else if (gamepad2.dpad_right)
+            prevIndex = "P2Right";
+
+        autoLaunching = launch.getStatus();
 
         // Telemetry
         telemetry.addData("Override State", override);
@@ -296,20 +338,6 @@ public class MyTerribleCode extends OpMode {
         // telemetry.addData("Buffer", String.format("head=%d slots=[%s,%s,%s]", head, slots[0], slots[1], slots[2]));
         telemetry.addData("Flywheel", flywheel.getStatus());
         telemetry.update();
-
-
-        if (gamepad1.dpad_left)
-            prevIndex = "P1Left";
-        else if (gamepad1.dpad_down)
-            prevIndex = "P1Down";
-        else if (gamepad1.dpad_right)
-            prevIndex = "P1Right";
-        else if (gamepad2.dpad_left)
-            prevIndex = "P2Left";
-        else if (gamepad2.dpad_down)
-            prevIndex = "P2Down";
-        else if (gamepad2.dpad_right)
-            prevIndex = "P2Right";
     }
 }
 // Old code(seems to be for color detection mainly), might use later
