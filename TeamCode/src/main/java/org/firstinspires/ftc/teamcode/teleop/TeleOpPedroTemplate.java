@@ -174,19 +174,19 @@ public class MyTerribleCode extends OpMode {
         // indexer to intake positions
         if (gamepad1.dpad_left && prevIndex != "P1Left")
         {
-            indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_1);
+            indexer.setIndexerPosition("Intake1");
             intakeHold = true;
             intake.setRotationInput(-1);
         }
         else if (gamepad1.dpad_down && prevIndex != "P1Down")
         {
-            indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_2); 
+            indexer.setIndexerPosition("Intake2"); 
             intakeHold = true;
             intake.setRotationInput(-1);
         }
         else if (gamepad1.dpad_right && prevIndex != "P1Right")
         {
-            indexer.setCollectionSelection(IndexerSubsystem.Selection.POSITION_3);   
+            indexer.setIndexerPosition("Intake3");
             intakeHold = true;
             intake.setRotationInput(-1);
         }
@@ -197,19 +197,19 @@ public class MyTerribleCode extends OpMode {
             // indexer to launch positions
             if (gamepad2.dpad_left && prevIndex != "P2Left")
             {
-                indexer.setSelection(IndexerSubsystem.Selection.POSITION_1);
+                indexer.setIndexerPosition("Launch1");
                 intakeHold = true;
                 intake.setRotationInput(-1);
             }
             else if (gamepad2.dpad_down && prevIndex != "P2Down")
             {
-                indexer.setSelection(IndexerSubsystem.Selection.POSITION_2);
+                indexer.setIndexerPosition("Launch2");
                 intakeHold = true;
                 intake.setRotationInput(-1);
             }
             else if (gamepad2.dpad_right && prevIndex != "P2Right")
             {
-                indexer.setSelection(IndexerSubsystem.Selection.POSITION_3);
+                indexer.setIndexerPosition("Launch3");
                 intakeHold = true;
                 intake.setRotationInput(-1);
             }
@@ -285,14 +285,6 @@ public class MyTerribleCode extends OpMode {
         telemetry.addData("Turret", turret.getStatus());
         telemetry.addData("Intake", intake.getStatus());
         telemetry.addData("Indexer", indexer.getStatus());
-        telemetry.addData("Indexer Presets", String.format("P1=%d P2=%d P3=%d",
-            IndexerSubsystem.POSITION_1,
-            IndexerSubsystem.POSITION_2,
-            IndexerSubsystem.POSITION_3));
-        telemetry.addData("Collection Presets", String.format("C1=%d C2=%d C3=%d",
-            IndexerSubsystem.COLLECTION_1,
-            IndexerSubsystem.COLLECTION_2,
-            IndexerSubsystem.COLLECTION_3));
         telemetry.addData("Indexer Enc", String.format("cur=%d tgt=%d",
             indexer.getCurrentPosition(),
             indexer.getTargetPosition()));
