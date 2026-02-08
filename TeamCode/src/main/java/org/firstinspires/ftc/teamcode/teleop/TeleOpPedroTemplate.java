@@ -41,6 +41,7 @@ public class MyTerribleCode extends OpMode {
     private static final String FEED_LEVER = "feedLever";     // servo
     private static final String INDEXER = "indexer";          // motor
     private static final String FLYWHEEL = "flywheel";        // motor
+    private static final String RAMP = "ramp"; // servo
     private static final String IMU = "imu"; // optional
     // private static final String COLOR_SENSOR = "sensor_color"; // color sensor at shooting position
 
@@ -90,7 +91,7 @@ public class MyTerribleCode extends OpMode {
         // Use Pedro Pathing Follower for teleop drive
         drive = new PedroDrive(hw);
         turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE);
-        intake = new IntakeSubsystem(hw, INTAKE, INTAKE_ANGLE);
+        intake = new IntakeSubsystem(hw, INTAKE, INTAKE_ANGLE, RAMP);
         indexer = new IndexerSubsystem(hw, INDEXER, FEED_LEVER);
         flywheel = new FlywheelSubsystem(hw, FLYWHEEL);
         // Enable dashboard configurables for indexer presets
@@ -218,10 +219,12 @@ public class MyTerribleCode extends OpMode {
             if (gamepad2.left_bumper)
             {
                 // lower ramp
+                intake.setRampPosition(-1);
             }
             else
             {
                 // raise ramp
+                intake.setRampPosition(1);
             }
 
              // TODO: manual turret, hood, motor close/far(no hood)
@@ -232,10 +235,12 @@ public class MyTerribleCode extends OpMode {
             if ((gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) && !intakeHold)
             {
                 // lower ramp
+                intake.setRampPosition(-1);
             }
             else
             {
                 // raise ramp
+                intake.setRampPosition(1);
             }
 
             // launch sequence
