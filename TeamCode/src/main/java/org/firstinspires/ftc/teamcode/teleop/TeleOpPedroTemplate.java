@@ -38,7 +38,7 @@ public class MyTerribleCode extends OpMode {
     private static final String INDEXER = "indexer";          // motor
     private static final String FLYWHEEL = "flywheel";        // motor
     private static final String RAMP = "ramp"; // servo
-    private static final STring COLOR_SENSOR = "sensor_color";
+    private static final String COLOR_SENSOR = "sensor_color"; // color sensor
     private static final String IMU = "imu"; // optional
 
     private DriveBase drive;
@@ -55,9 +55,6 @@ public class MyTerribleCode extends OpMode {
     private boolean override = false;
     private ElapsedTime overrideTime = new ElapsedTime();
 
-    private double hoodInput = 0.0;
-    private double turretInput = 0.0;
-
     // fixing ftc's very annoying code lol(bumpers are bools, triggers are doubles)
     private double p1LeftBumperToDouble;
     private double p1RightBumperToDouble;
@@ -67,8 +64,8 @@ public class MyTerribleCode extends OpMode {
     
     // Default values, wantedPattern is the pattern for the next 3 balls, indexerPattern is what is in the indexer
     // possible values for indexerPattern=empty, purple, green, unknown(there is a ball, we don't know what color)
-    private String[] wantedPattern = {"purple", "green", "purple"}
-    private String[] indexerPattern = {"empty", "empty", "empty"}
+    private String[] wantedPattern = {"purple", "green", "purple"};
+    private String[] indexerPattern = {"empty", "empty", "empty"};
     private boolean checkingPattern = false;
     private boolean autoLaunching = false;
 
@@ -122,7 +119,7 @@ public class MyTerribleCode extends OpMode {
         }
         else
         {
-            overrideTime.reset()
+            overrideTime.reset();
         }
 
         
@@ -133,17 +130,7 @@ public class MyTerribleCode extends OpMode {
 
         drive.setDriverInput(x, y, rx, false);
         drive.update();
-
-        hoodInput = gamepad2.left_stick_y;
-        turretInput = gamepad2.right_stick_x;
         
-        // Mechanisms
-        // Turret: rotate with right_stick_x, angle with left_stick_y
-        // Zach working on it, make sure to move to override/non-override code
-        turret.setManualInput(gamepad2.right_stick_x);
-        turret.setAngleInput(gamepad2.left_stick_y);
-        turret.update();
-
         // intaking
         intake.setTriggers(p1LeftBumperToDouble, gamepad1.left_trigger);
         if (!intakeHold)
@@ -204,6 +191,7 @@ public class MyTerribleCode extends OpMode {
         }
         else 
         {
+            // if we are doing auto functions, don't pulse lever arm
             indexer.handleLeverButton(false);
         }
         // Override button
@@ -221,7 +209,7 @@ public class MyTerribleCode extends OpMode {
                 intake.setRampPosition(1);
             }
             // TODO: once turret is wrriten, do manual turret/hood controls and manual flywheel speed
-            // variables: hoodInput, turretInput, gamepad2.right_bumper=close launch, gamepad2.right_trigger > triggerSense=far launch
+            // variables: pad2LeftStickY=hoodInput, pad2RightStickX=turretInput, pad2RightBumper=close launch, pad2RightTrigger=far launch
         }
         else
         {
@@ -237,7 +225,7 @@ public class MyTerribleCode extends OpMode {
                 intake.setRampPosition(1);
             }
             // TODO: once turret is written, call auto update with flywheel launch
-            // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense
+            // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense=launch
         }
 
         // launch sequence
@@ -268,15 +256,15 @@ public class MyTerribleCode extends OpMode {
         // set wanted pattern
         if (gamepad2.x)
         {
-            wantedPattern = {"green", "purple", "purple"}
+            wantedPattern = {"green", "purple", "purple"};
         }
         else if (gamepad2.a)
         {
-            wantedPattern = {"purple", "green", "purple"}
+            wantedPattern = {"purple", "green", "purple"};
         }
         else if (gamepad2.b)
         {
-            wantedPattern = {"purple", "purple", "green"}
+            wantedPattern = {"purple", "purple", "green"};
         }
 
         // Maintain lever timing and magnet
@@ -284,6 +272,7 @@ public class MyTerribleCode extends OpMode {
         launch.update();
         pattern.update();
 
+        // update indexer pattern if launching(removing balls) or checking pattern
         if (autoLaunching)
         {
             indexerPattern = launch.getIndexerPattern();
@@ -299,6 +288,7 @@ public class MyTerribleCode extends OpMode {
             intakeHold = false;
         }
 
+        // define previous indexer input
         if (gamepad1.dpad_left)
             prevIndex = "P1Left";
         else if (gamepad1.dpad_down)
@@ -312,11 +302,12 @@ public class MyTerribleCode extends OpMode {
         else if (gamepad2.dpad_right)
             prevIndex = "P2Right";
 
+        // update bools for launching/checking pattern
         autoLaunching = launch.getStatus();
         checkingPattern = pattern.getStatus();
 
         // Telemetry
-        telemetry.addData("currentColor", pattern.getHue());
+        telemetry.addData("currentColor", pattern.getHsv()[0]);
         telemetry.addData("overrideState", override);
         telemetry.addData("magnetState", indexer.getMagnetState());
         telemetry.addData("indexerPosition", indexer.getCurrentPosition());
@@ -333,6 +324,7 @@ public class MyTerribleCode extends OpMode {
         telemetry.update();
     }
 
+    // lets us output an array
     public String printStringArray(String[] arr)
     {
         String printThis = "[";

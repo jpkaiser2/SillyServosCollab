@@ -25,7 +25,7 @@ public class LaunchSubsystem
 
     public void update()
     {
-        // update based on step
+        // update based on step, even steps move to position, odd steps pulse lever arm to launch
         if (launching)
         {
             if (step == 0)
@@ -121,7 +121,7 @@ public class LaunchSubsystem
             }
         }
 
-        // go to a position with a ball
+        // go to a position with a ball(if not early return by finding the right ball)
         for (int i=0; i<indexerPattern.length; i++)
         {
             if (indexerPattern[i].equals("purple") || indexerPattern[i].equals("green") || indexerPattern[i].equals("unknown"))

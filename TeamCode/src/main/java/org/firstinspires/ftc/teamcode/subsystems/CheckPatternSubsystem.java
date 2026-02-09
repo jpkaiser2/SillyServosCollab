@@ -43,7 +43,7 @@ public class CheckPatternSubsystem
     {
         if (checking)
         {
-            //steps
+            //steps, each step moves to a position and adds its color to the indexer
             if (step == 0)
             {
                 if (!moving)
@@ -95,10 +95,10 @@ public class CheckPatternSubsystem
         }
     }
 
+    // calculates and returns the String of the ball color
     private String getColor()
     {
-        colors = colorSensor.getNormalizedColors();
-        Color.colorToHSV(colors.toColor(), hsv);
+        hsv = getHsv();
         hue = hsv[0];
         saturation = hsv[1];
         value = hsv[2];
@@ -142,10 +142,10 @@ public class CheckPatternSubsystem
         return indexerPattern;
     }
 
-    public float getHue()
+    public float[] getHsv()
     {
         colors = colorSensor.getNormalizedColors();
         Color.colorToHSV(colors.toColor(), hsv);
-        return hsv[0];
+        return hsv;
     }
 }
