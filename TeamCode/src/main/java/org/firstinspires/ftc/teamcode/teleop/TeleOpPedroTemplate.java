@@ -5,11 +5,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.bylazar.configurables.PanelsConfigurables;
 import com.qualcomm.robotcore.util.ElapsedTime;
-/*
-import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
-import com.qualcomm.robotcore.hardware.NormalizedRGBA;
-import android.graphics.Color;
-*/
 
 import org.firstinspires.ftc.teamcode.subsystems.LaunchSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.IntakeSubsystem;
@@ -43,8 +38,8 @@ public class MyTerribleCode extends OpMode {
     private static final String INDEXER = "indexer";          // motor
     private static final String FLYWHEEL = "flywheel";        // motor
     private static final String RAMP = "ramp"; // servo
+    private static final STring COLOR_SENSOR = "sensor_color";
     private static final String IMU = "imu"; // optional
-    // private static final String COLOR_SENSOR = "sensor_color"; // color sensor at shooting position
 
     private DriveBase drive;
     private TurretSubsystem turret;
@@ -52,6 +47,7 @@ public class MyTerribleCode extends OpMode {
     private IndexerSubsystem indexer;
     private FlywheelSubsystem flywheel;
     private LaunchSubsystem launch;
+    private CheckPatternSubsystem pattern;
     // Indexer preset control
     
     private String prevIndex = "";
@@ -75,16 +71,6 @@ public class MyTerribleCode extends OpMode {
     private String[] indexerPattern = {"empty", "empty", "empty"}
     private boolean checkingPattern = false;
     private boolean autoLaunching = false;
-    
-    // Software indexing state (disabled: color sensor-based indexing)
-    /*
-    private enum BallColor { BLUE, PURPLE, UNKNOWN }
-    private BallColor[] slots = new BallColor[] { BallColor.UNKNOWN, BallColor.UNKNOWN, BallColor.UNKNOWN };
-    private int head = 0; // slot at shooting/color sensor position
-    private int pendingSteps = 0; // queued forward steps
-    private boolean wasMovingLastUpdate = false;
-    private NormalizedColorSensor colorSensor;
-    */
 
 
     @Override
@@ -98,12 +84,9 @@ public class MyTerribleCode extends OpMode {
         indexer = new IndexerSubsystem(hw, INDEXER, FEED_LEVER);
         flywheel = new FlywheelSubsystem(hw, FLYWHEEL);
         launch = new LaunchSubsystem(indexer);
+        pattern = new CheckPatternSubsystem(hw, indexer, COLOR_SENSOR);
         // Enable dashboard configurables for indexer presets
         try { PanelsConfigurables.INSTANCE.refreshClass(indexer); } catch (Exception ignore) {}
-        // Color sensor disabled
-        // try {
-        //     colorSensor = hw.get(NormalizedColorSensor.class, COLOR_SENSOR);
-        // } catch (Exception ignore) { colorSensor = null; }
     }
 
     @Override
@@ -258,7 +241,7 @@ public class MyTerribleCode extends OpMode {
         }
 
         // launch sequence
-        if (gamepad2.y)
+        if (gamepad2.y && !checkingPattern)
         {
             if (override && gamepad2.right_trigger > triggerSense && autoLaunching)
             {
@@ -268,21 +251,17 @@ public class MyTerribleCode extends OpMode {
             {
                 launch.startlaunch(wantedPattern, indexerPattern);
             }
-            if (autoLaunching)
-            {
-                indexerPattern = launch.getIndexerPattern();
-            }
         }
         // pattern sequence
-        else if (gamepad2.x || gamepad2.a || gamepad2.b)
+        else if ((gamepad2.x || gamepad2.a || gamepad2.b) && !autoLaunching)
         {
             if (override && gamepad2.right_trigger > triggerSense && checkingPattern)
             {
-                // stop checking patetrn
+                pattern.stop();
             }
             else if (!checkingPattern)
             {
-                // check pattern
+                pattern.start();
             }
         }
 
@@ -302,6 +281,17 @@ public class MyTerribleCode extends OpMode {
 
         // Maintain lever timing and magnet
         indexer.update();
+        launch.update();
+        pattern.update();
+
+        if (autoLaunching)
+        {
+            indexerPattern = launch.getIndexerPattern();
+        }
+        else if (checkingPattern)
+        {
+            indexerPattern = pattern.getIndexerPattern();
+        }
 
         // Normal auto-release of intake hold when indexer finishes
         if (!indexer.isMoving()) 
@@ -323,92 +313,34 @@ public class MyTerribleCode extends OpMode {
             prevIndex = "P2Right";
 
         autoLaunching = launch.getStatus();
+        checkingPattern = pattern.getStatus();
 
         // Telemetry
-        telemetry.addData("Override State", override);
+        telemetry.addData("currentColor", pattern.getHue());
+        telemetry.addData("overrideState", override);
         telemetry.addData("magnetState", indexer.getMagnetState());
-        telemetry.addData("EncoderTicks", indexer.getCurrentPosition());
+        telemetry.addData("indexerPosition", indexer.getCurrentPosition());
+        telemetry.addData("wantedPattern", printStringArray(wantedPattern));
+        telemetry.addData("currentPattern", printStringArray(indexerPattern));
+        telemetry.addData("launching", autoLaunching);
+        telemetry.addData("checkingPattern", checkingPattern);
         telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
         telemetry.addData("Turret", turret.getStatus());
         telemetry.addData("Intake", intake.getStatus());
         telemetry.addData("Indexer", indexer.getStatus());
-        telemetry.addData("Indexer Enc", String.format("cur=%d tgt=%d",
-            indexer.getCurrentPosition(),
-            indexer.getTargetPosition()));
         // telemetry.addData("Buffer", String.format("head=%d slots=[%s,%s,%s]", head, slots[0], slots[1], slots[2]));
         telemetry.addData("Flywheel", flywheel.getStatus());
         telemetry.update();
     }
+
+    public String printStringArray(String[] arr)
+    {
+        String printThis = "[";
+        for (int i=0; i<arr.length; i++)
+        {
+            printThis += arr[i] + ", ";
+        }
+        printThis += "]";
+        return printThis;
+    }
 }
-// Old code(seems to be for color detection mainly), might use later
-
-
-        // boolean moving = indexer.isMoving();
-        // if (wasMovingLastUpdate && !moving) {
-        //     // Just arrived: sample color at head
-        //     sampleAndStoreColorAtHead();
-        // }
-        // wasMovingLastUpdate = moving;
-        // if (!moving && pendingSteps > 0) {
-        //     // Execute a single forward step through POSITION_1 -> POSITION_2 -> POSITION_3 -> POSITION_1
-        //     IndexerSubsystem.Selection sel = indexer.getSelection();
-        //     IndexerSubsystem.Selection nextSel;
-        //     switch (sel) {
-        //         case POSITION_1:
-        //             nextSel = IndexerSubsystem.Selection.POSITION_2; break;
-        //         case POSITION_2:
-        //             nextSel = IndexerSubsystem.Selection.POSITION_3; break;
-        //         case POSITION_3:
-        //         default:
-        //             nextSel = IndexerSubsystem.Selection.POSITION_1; break;
-        //     }
-        //     indexer.setSelection(nextSel);
-        //     head = (head + 1) % 3;
-        //     pendingSteps--;
-        // }
-
-
-// private int findColorIndex(BallColor desired) {
-    //     for (int i = 0; i < 3; i++) {
-    //         if (slots[i] == desired) return i;
-    //     }
-    //     return -1;
-    // }
-
-
-// private void sampleAndStoreColorAtHead() {
-    //     if (colorSensor == null) return;
-    //     try {
-    //         NormalizedRGBA colors = colorSensor.getNormalizedColors();
-    //         final float[] hsv = new float[3];
-    //         Color.colorToHSV(colors.toColor(), hsv);
-    //         float hue = hsv[0];
-    //         BallColor detected;
-    //         if (hue >= 200 && hue < 260) {
-    //             detected = BallColor.BLUE;
-    //         } else if (hue >= 260 && hue < 340) {
-    //             detected = BallColor.PURPLE;
-    //         } else {
-    //             detected = BallColor.UNKNOWN;
-    //         }
-    //         slots[head] = detected;
-    //     } catch (Exception ignore) { /* leave UNKNOWN */ }
-    // }
-
-
-// Color selection disabled
-        // if (gamepad1.x && !prevX) {
-        //     intake.setHoldUp(true);
-        //     int targetIndex = findColorIndex(BallColor.BLUE);
-        //     if (targetIndex >= 0) {
-        //         int deltaForward = (targetIndex - head + 3) % 3;
-        //         pendingSteps += deltaForward;
-        //     }
-        // } else if (gamepad1.b && !prevB) {
-        //     intake.setHoldUp(true);
-        //     int targetIndex = findColorIndex(BallColor.PURPLE);
-        //     if (targetIndex >= 0) {
-        //         int deltaForward = (targetIndex - head + 3) % 3;
-        //         pendingSteps += deltaForward;
-        //     }
-        // }

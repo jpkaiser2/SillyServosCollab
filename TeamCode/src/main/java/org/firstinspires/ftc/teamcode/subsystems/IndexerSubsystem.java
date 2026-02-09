@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Configurable
@@ -73,6 +74,9 @@ public class IndexerSubsystem {
         this.feedLeverServo = hardwareMap.get(Servo.class, feedLeverServoName);
         this.feedLeverServo.setDirection(Servo.Direction.REVERSE);
         this.feedLeverServo.setPosition(Math.min(leverIdlePos, leverMaxPos));
+
+        this.magnetSensor = hardwareMap.get(TouchSensor.class, "magnet");
+        previousMagnetState = magnetSensor.isPressed();
     }
 
     public void updateMagnet() {

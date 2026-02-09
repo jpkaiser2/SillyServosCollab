@@ -15,8 +15,8 @@ public class LaunchSubsystem
     {
         this.indexer = indexer;
         launching = false;
-        wantedPattern = {"Green", "Purple", "Purple"};
-        indexerPattern = {"Empty", "Empty", "Empty"};
+        wantedPattern = {"green", "purple", "purple"};
+        indexerPattern = {"empty", "empty", "empty"};
         step = 0;
         moving = false;
         pulsing = false;
@@ -47,7 +47,7 @@ public class LaunchSubsystem
                 {
                     pulsing = false;
                     step++;
-                    indexerPattern[position] = "Empty";
+                    indexerPattern[position] = "empty";
                 }
             }
             else if (step == 2)
@@ -69,7 +69,7 @@ public class LaunchSubsystem
                 {
                     pulsing = false;
                     step++;
-                    indexerPattern[position] = "Empty";
+                    indexerPattern[position] = "empty";
                 }
             }
             else if (step == 4)
@@ -91,7 +91,7 @@ public class LaunchSubsystem
                 {
                     pulsing = false;
                     launching = false;
-                    indexerPattern[position] = "Empty";
+                    indexerPattern[position] = "empty";
                 }
             }
         }
@@ -107,7 +107,7 @@ public class LaunchSubsystem
     }
 
     // launchNumber goes 1,2,3
-    public void goToNextPosition(int launchNumber)
+    private void goToNextPosition(int launchNumber)
     {
         moving = true;
         // go to the next position following the pattern
@@ -124,7 +124,7 @@ public class LaunchSubsystem
         // go to a position with a ball
         for (int i=0; i<indexerPattern.length; i++)
         {
-            if (indexerPattern[i].equals("Purple") || indexerPattern[i].equals("Green") || indexerPattern[i].equals("Unknown"))
+            if (indexerPattern[i].equals("purple") || indexerPattern[i].equals("green") || indexerPattern[i].equals("unknown"))
             {
                 indexer.setIndexerPosition("Launch" + (i+1));
                 position = i;
