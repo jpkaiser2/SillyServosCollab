@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.AngleUnit;
 
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -178,7 +177,7 @@ public class TurretSubsystem {
        return Math.max(lo, Math.min(hi, v));
    }
    public void runToAngle(double angle){
-       int ticks = (int) ((TICKS_PER_TURRET_REV/360)*angle);
+       int ticks = (TICKS_PER_TURRET_REV/360)*angle;
        turretMotor.setTargetPosition(zeroTicks + ticks);
    }
    public AprilTagWebcam getCamera(){
@@ -188,12 +187,12 @@ public class TurretSubsystem {
        return camera.getTargetTagID();
    }
    public void setTargetID(int ID){
-       camera.setTargetTagID(ID);
+       camera.setTargetTagID(ID)
    }
-   public void setFlywheelPower(double power){
+   public void setflywheelPower(double power){
     flywheel.setPower(power);
    }
-   private void doKinematics(double distance){
+   private void doKinematics(distance){
         //all in SI units (metric)
         double heightOfGoal = 0.9906;
         double clearance = 0.127;
@@ -205,11 +204,11 @@ public class TurretSubsystem {
         double hoodGearRatio = 75.0/20.0; 
         angle *= hoodGearRatio;
         double ballVelocity = Math.sqrt(4.9*(distance*distance+4*deltaY*deltaY)/deltaY);
-        double launcherEfficiency = 0.65; // efficiency factor to account for losses in the launcher mechanism
+        
         double wheelCircumference = 0.3015;
         double flywheelAngularVelocity = ((ballVelocity/launcherEfficiency)/wheelCircumference)*360;
         //flywheel Angular Velocity =((ball speed(m/s)/efficiency)/wheel circumfrence(m))*360 degrees
-        flywheel.setVelocity(flywheelAngularVelocity,AngleUnit.DEGREES);
+        ((DcMotorEx) flywheel).setVelocity(flywheelAngularVelocity,AngleUnit.DEGREES);
         //rightLauncherServo.setPosition(angle/300);//300 degree servo range of motion
         //leftLauncherServo.setPosition(1-(angle/300));
         turretAngleServo.setPosition(1-(angle/300));

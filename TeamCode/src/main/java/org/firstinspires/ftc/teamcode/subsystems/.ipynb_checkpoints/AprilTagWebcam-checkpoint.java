@@ -127,7 +127,7 @@ public class AprilTagWebcam {
     this.update();
        AprilTagDetection target = this.getTargetTag();
        if (target == null){
-        return -1.0;
+        return 0.0;
        }
        
        

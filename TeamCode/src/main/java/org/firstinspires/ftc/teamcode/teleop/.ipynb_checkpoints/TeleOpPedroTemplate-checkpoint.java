@@ -149,11 +149,11 @@ public class TeleOpPedroTemplate extends OpMode {
        // Mechanisms
        // Turret: rotate with right_stick_x, angle with left_stick_y
        if (gamepad2.left_bumper){
-       turret.updateManual(gamepad2.right_stick_x,gamepad2.left_stick_y);
+       //turret.updateManual(gamepad2.right_stick_x,gamepad2.left_stick_y);
        }
        else{
        //turret auto aim
-       turret.updateAutoTurret(false);
+       //turret.updateAutoTurret();
        }
 
 
