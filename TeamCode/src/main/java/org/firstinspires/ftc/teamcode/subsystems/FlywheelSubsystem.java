@@ -24,12 +24,14 @@ public class FlywheelSubsystem {
         return flywheel.getPower();
     }
     public double getVelocity() {
+        //I think this is ticks/second
         return flywheel.getVelocity();
     }
     public void setVelocity(double angularVelocity) {
-        flywheel.setVelocity(angularVelocity, AngleUnit.DEGREES);
+        //in rot/second
+        flywheel.setVelocity(angularVelocity*360,AngleUnit.DEGREES);
     }
-
+    
     public String getStatus() {
         return String.format("flywheelPower=%.2f flywheelVelocity=%.2f", flywheel.getPower(), flywheel.getVelocity());
     }

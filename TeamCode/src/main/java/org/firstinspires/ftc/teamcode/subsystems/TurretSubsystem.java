@@ -138,7 +138,7 @@ public class TurretSubsystem {
 
 
    // ---- Update ----
-   public void updateManual(double rightStickX,double leftStickY) {
+   public void updateManual(double rightStickX,double leftStickY, double flywheelSpeed) {
        // Optional soft limit clamp: prevent driving further into limits
 
 
@@ -156,13 +156,22 @@ public class TurretSubsystem {
        turretMotor.setPower(p);
        // Maintain the last commanded angle servo position
        turretAngleServo.setPosition(angleServoPos);
+       //flywheelSpeed is in rpm
+       //devide by 60 to convert to rps
+       flywheel.setVelocity(flywheelSpeed/60);
+       
    }
   
    public void updateAutoTurret(boolean launch) {
+       double defualtFlywheelVelocity = 100.0/60;
+       //100 rpm for now
        runToAngle(camera.getTargetTurretBearing());     
        //TODO: add the kinematics
        if (launch){
         this.doKinematics(camera.getTargetTurretDistance());
+       }
+       else{
+        flywheel.setVelocity(defualtFlywheelVelocity);
        }
        
    }
@@ -195,24 +204,26 @@ public class TurretSubsystem {
    }
    private void doKinematics(double distance){
         //all in SI units (metric)
-        double heightOfGoal = 0.9906;
-        double clearance = 0.127;
-        double launcherHeight = 0.3302;
-        double hoodLoweredAngle = 31.7;
-        double deltaY = heightOfGoal+clearance-launcherHeight; 
-        double angle = (Math.atan(2*deltaY/distance)*(180/Math.PI));
-        angle -= hoodLoweredAngle;
-        double hoodGearRatio = 75.0/20.0; 
-        angle *= hoodGearRatio;
-        double ballVelocity = Math.sqrt(4.9*(distance*distance+4*deltaY*deltaY)/deltaY);
-        double launcherEfficiency = 0.65; // efficiency factor to account for losses in the launcher mechanism
-        double wheelCircumference = 0.3015;
-        double flywheelAngularVelocity = ((ballVelocity/launcherEfficiency)/wheelCircumference)*360;
-        //flywheel Angular Velocity =((ball speed(m/s)/efficiency)/wheel circumfrence(m))*360 degrees
-        flywheel.setVelocity(flywheelAngularVelocity,AngleUnit.DEGREES);
-        //rightLauncherServo.setPosition(angle/300);//300 degree servo range of motion
-        //leftLauncherServo.setPosition(1-(angle/300));
-        turretAngleServo.setPosition(1-(angle/300));
+        if (distance > 0){
+            double heightOfGoal = 0.9906;
+            double clearance = 0.127;
+            double launcherHeight = 0.3302;
+            double hoodLoweredAngle = 31.7;
+            double deltaY = heightOfGoal+clearance-launcherHeight; 
+            double angle = (Math.atan(2*deltaY/distance)*(180/Math.PI));
+            angle -= hoodLoweredAngle;
+            double hoodGearRatio = 75.0/20.0; 
+            angle *= hoodGearRatio;
+            double ballVelocity = Math.sqrt(4.9*(distance*distance+4*deltaY*deltaY)/deltaY);
+            double launcherEfficiency = 0.65; // efficiency factor to account for losses in the launcher mechanism
+            double wheelCircumference = 0.3015;
+            double flywheelAngularVelocity = ((ballVelocity/launcherEfficiency)/wheelCircumference);
+            //flywheel Angular Velocity =((ball speed(m/s)/efficiency)/wheel circumfrence(m))
+            flywheel.setVelocity(flywheelAngularVelocity);
+            //rightLauncherServo.setPosition(angle/300);//300 degree servo range of motion
+            //leftLauncherServo.setPosition(1-(angle/300));
+            turretAngleServo.setPosition(1-(angle/150));
+        }
     }
      
 }
