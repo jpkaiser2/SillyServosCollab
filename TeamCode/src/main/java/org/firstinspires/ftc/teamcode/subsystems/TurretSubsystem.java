@@ -1,127 +1,229 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.AngleUnit;
+
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 
 public class TurretSubsystem {
-    private final DcMotorEx turretMotor;
-    private final Servo turretAngleServo;
-
-    // ===== Tuning constants MUST be set for turret =====
-    private static final double MOTOR_TICKS_PER_REV = 537.7; // goBILDA 5203 312RPM output ticks/rev
-    private static final double TURRET_GEAR_RATIO = 4.0;     // 50T -> 200T
-    private static final double TICKS_PER_TURRET_REV = MOTOR_TICKS_PER_REV * TURRET_GEAR_RATIO;
+   private final DcMotorEx turretMotor;
+   private final Servo turretAngleServo;
 
 
-    private double rotationPowerCmd = 0.0;
-    private double maxPower = 0.6;
-    // Holds the last commanded turret angle servo position (0..1)
-    private double angleServoPos = 0.5;
-    private static final double ANGLE_DEADBAND = 0.05; // stick deadband to hold position
+   // ===== Tuning constants MUST be set for turret =====
+   private static final double MOTOR_TICKS_PER_REV = 537.7; // goBILDA 5203 312RPM output ticks/rev
+   private static final double TURRET_GEAR_RATIO = 4.0;     // 50T -> 200T
+   private static final double TICKS_PER_TURRET_REV = MOTOR_TICKS_PER_REV * TURRET_GEAR_RATIO;
 
-    // "Soft zero" offset so angle=0 when turret faces forward
-    private int zeroTicks = 0;
 
-    // Optional soft limits (degrees). Set to null behavior by making wide.
-    private double minDeg = -180.0;
-    private double maxDeg = 180.0;
 
-    public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName) {
-        this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
-        this.turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        this.turretMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        this.turretMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        this.turretAngleServo = hardwareMap.get(Servo.class, turretAngleServoName);
-        this.turretAngleServo.setPosition(angleServoPos);
+   private AprilTagWebcam camera = new AprilTagWebcam();
+   private FlywheelSubsystem flywheel; 
+   private double rotationPowerCmd = 0.0;
+   private double maxPower = 0.6;
+   // Holds the last commanded turret angle servo position (0..1)
+   private double angleServoPos = 0.5;
+   private static final double ANGLE_DEADBAND = 0.05; // stick deadband to hold position
 
-        // Soft-zero at init: turret angle will be 0 at whatever position you are in during init.
-        zeroTurretHere();
+
+   // "Soft zero" offset so angle=0 when turret faces forward
+   private int zeroTicks = 0;
+
+
+   // Optional soft limits (degrees). Set to null behavior by making wide.
+   private double minDeg = -180.0;
+   private double maxDeg = 180.0;
+
+
+   public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName, Telemetry telemetry) {
+       this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
+       this.turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+       this.turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+       this.turretMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+
+
+       this.turretAngleServo = hardwareMap.get(Servo.class, turretAngleServoName);
+       this.turretAngleServo.setPosition(angleServoPos);
+
+
+       // Soft-zero at init: turret angle will be 0 at whatever position you are in during init.
+       zeroTurretHere();
+       camera.init(hardwareMap,telemetry);
+       flywheel = new FlywheelSubsystem(hardwareMap, "flywheel");
+   }
+
+
+   /** Call this when turret is physically pointing "forward" to define 0° */
+   public void zeroTurretHere() {
+       zeroTicks = turretMotor.getCurrentPosition();
+   }
+
+
+   /** Optional: if you want to reset encoder counts (not required) */
+   public void resetEncoderHard() {
+       turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+       turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+       zeroTicks = 0;
+   }
+
+
+   public void setSoftLimitsDeg(double minDeg, double maxDeg) {
+       this.minDeg = minDeg;
+       this.maxDeg = maxDeg;
+   }
+
+
+   public void setMaxPower(double maxPower) {
+       this.maxPower = clip(maxPower, 0.0, 1.0);
+   }
+
+
+   // ---- Motor / Servo inputs ----
+
+
+   /** For auto aim: set actual motor command power directly */
+   public void setTurretPower(double power) {
+       rotationPowerCmd = clip(power, -maxPower, maxPower);
+   }
+
+
+   /** Manual rotate turret by motor (gamepad2.right_stick_x) */
+   public void setManualInput(double joystick) {
+       rotationPowerCmd = clip(joystick, -maxPower, maxPower);
+   }
+
+
+   /** Adjust hood/angle servo by joystick -1..1 mapped to 0..1. Holds position in deadband. */
+   public void setAngleInput(double joystick) {
+       /*double j = clip(joystick, -1.0, 1.0);
+       if (Math.abs(j) > ANGLE_DEADBAND) {
+           double pos = (j * -0.5) + 0.5; // up is -y
+           angleServoPos = clip(pos, 0.0, 1.0);
+           */
+           if (Math.abs(joystick) > ANGLE_DEADBAND)
+               {
+                   angleServoPos = (-1 * joystick - 1) / 2.0;
+               }
+       }
+       // else: hold previous angleServoPos
+   }
+
+
+   // ---- State access (what PID needs) ----
+
+
+   public int getTurretTicks() {
+       return turretMotor.getCurrentPosition() - zeroTicks;
+   }
+
+
+   /** Turret yaw angle in degrees (0° at zeroTurretHere()) */
+   public double getTurretAngleDeg() {
+       return (getTurretTicks() * 360.0) / TICKS_PER_TURRET_REV;
+   }
+
+
+   /** Turret yaw angle in radians */
+   public double getTurretAngleRad() {
+       return Math.toRadians(getTurretAngleDeg());
+   }
+
+
+   // ---- Update ----
+   public void updateManual(double rightStickX,double leftStickY, double flywheelSpeed) {
+       // Optional soft limit clamp: prevent driving further into limits
+
+
+       this.setManualInput(rightStickX);
+       this.setAngleInput(leftStickY);
+       double deg = getTurretAngleDeg();
+       double p = rotationPowerCmd;
+
+
+       if ((deg <= minDeg && p < 0) || (deg >= maxDeg && p > 0)) {
+           p = 0.0;
+       }
+
+
+       turretMotor.setPower(p);
+       // Maintain the last commanded angle servo position
+       turretAngleServo.setPosition(angleServoPos);
+       //flywheelSpeed is in rpm
+       //devide by 60 to convert to rps
+       flywheel.setVelocity(flywheelSpeed/60);
+       
+   }
+  
+   public void updateAutoTurret(boolean launch) {
+       double defualtFlywheelVelocity = 100.0/60;
+       //100 rpm for now
+       runToAngle(camera.getTargetTurretBearing());     
+       //TODO: add the kinematics
+       if (launch){
+        this.doKinematics(camera.getTargetTurretDistance());
+       }
+       else{
+        flywheel.setVelocity(defualtFlywheelVelocity*0.0254);
+       }
+       
+   }
+
+
+   public String getStatus() {
+       return String.format("turretPower=%.2f angleServo=%.2f yawDeg=%.1f ticks=%d",
+               turretMotor.getPower(), turretAngleServo.getPosition(), getTurretAngleDeg(), getTurretTicks());
+   }
+
+
+   private static double clip(double v, double lo, double hi) {
+       return Math.max(lo, Math.min(hi, v));
+   }
+   public void runToAngle(double angle){
+       int ticks = (int) ((TICKS_PER_TURRET_REV/360)*angle);
+       turretMotor.setTargetPosition(zeroTicks + ticks);
+   }
+   public AprilTagWebcam getCamera(){
+       return camera;
+   }
+   public int getTargetID(){
+       return camera.getTargetTagID();
+   }
+   public void setTargetID(int ID){
+       camera.setTargetTagID(ID);
+   }
+   public void setFlywheelPower(double power){
+    flywheel.setPower(power);
+   }
+   private void doKinematics(double distance){
+        //all in SI units (metric)
+        
+        double heightOfGoal = 0.9906;
+        double clearance = 0.127;
+        double launcherHeight = 0.3302;
+        double hoodLoweredAngle = 31.7;
+        double deltaY = heightOfGoal+clearance-launcherHeight; 
+        double angle = (Math.atan(2*deltaY/distance)*(180/Math.PI));
+        angle -= hoodLoweredAngle;
+        double hoodGearRatio = 75.0/20.0; 
+        angle *= hoodGearRatio;
+        double ballVelocity = Math.sqrt(4.9*(distance*distance+4*deltaY*deltaY)/deltaY);
+        double launcherEfficiency = 0.65; // efficiency factor to account for losses in the launcher mechanism
+        double wheelCircumference = 0.3015;
+        double flywheelAngularVelocity = ((ballVelocity/launcherEfficiency)/wheelCircumference);
+        //flywheel Angular Velocity =((ball speed(m/s)/efficiency)/wheel circumfrence(m))
+        flywheel.setVelocity(flywheelAngularVelocity);
+        //rightLauncherServo.setPosition(angle/300);//300 degree servo range of motion
+        //leftLauncherServo.setPosition(1-(angle/300));
+        turretAngleServo.setPosition(1-(angle/150));
+        
     }
-
-    /** Call this when turret is physically pointing "forward" to define 0° */
-    public void zeroTurretHere() {
-        zeroTicks = turretMotor.getCurrentPosition();
-    }
-
-    /** Optional: if you want to reset encoder counts (not required) */
-    public void resetEncoderHard() {
-        turretMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        turretMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        zeroTicks = 0;
-    }
-
-    public void setSoftLimitsDeg(double minDeg, double maxDeg) {
-        this.minDeg = minDeg;
-        this.maxDeg = maxDeg;
-    }
-
-    public void setMaxPower(double maxPower) {
-        this.maxPower = clip(maxPower, 0.0, 1.0);
-    }
-
-    // ---- Motor / Servo inputs ----
-
-    /** For auto aim: set actual motor command power directly */
-    public void setTurretPower(double power) {
-        rotationPowerCmd = clip(power, -maxPower, maxPower);
-    }
-
-    /** Manual rotate turret by motor (gamepad2.right_stick_x) */
-    public void setManualInput(double joystick) {
-        rotationPowerCmd = clip(joystick, -maxPower, maxPower);
-    }
-
-    /** Adjust hood/angle servo by joystick -1..1 mapped to 0..1. Holds position in deadband. */
-    public void setAngleInput(double joystick) {
-        double j = clip(joystick, -1.0, 1.0);
-        if (Math.abs(j) > ANGLE_DEADBAND) {
-            double pos = (j * -0.5) + 0.5; // up is -y
-            angleServoPos = clip(pos, 0.0, 1.0);
-        }
-        // else: hold previous angleServoPos
-    }
-
-    // ---- State access (what PID needs) ----
-
-    public int getTurretTicks() {
-        return turretMotor.getCurrentPosition() - zeroTicks;
-    }
-
-    /** Turret yaw angle in degrees (0° at zeroTurretHere()) */
-    public double getTurretAngleDeg() {
-        return (getTurretTicks() * 360.0) / TICKS_PER_TURRET_REV;
-    }
-
-    /** Turret yaw angle in radians */
-    public double getTurretAngleRad() {
-        return Math.toRadians(getTurretAngleDeg());
-    }
-
-    // ---- Update ----
-    public void update() {
-        // Optional soft limit clamp: prevent driving further into limits
-        double deg = getTurretAngleDeg();
-        double p = rotationPowerCmd;
-
-        if ((deg <= minDeg && p < 0) || (deg >= maxDeg && p > 0)) {
-            p = 0.0;
-        }
-
-        turretMotor.setPower(p);
-        // Maintain the last commanded angle servo position
-        turretAngleServo.setPosition(angleServoPos);
-    }
-
-    public String getStatus() {
-        return String.format("turretPower=%.2f angleServo=%.2f yawDeg=%.1f ticks=%d",
-                turretMotor.getPower(), turretAngleServo.getPosition(), getTurretAngleDeg(), getTurretTicks());
-    }
-
-    private static double clip(double v, double lo, double hi) {
-        return Math.max(lo, Math.min(hi, v));
-    }
+     
 }

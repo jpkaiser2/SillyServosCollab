@@ -54,6 +54,8 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private double p2LeftBumperToDouble;
     private double p2RightBumperToDouble;
     private final double triggerSense = 0.4;
+    private double flywheelSpeed= 20;
+    private boolean launching = false;
     
     // Default values, wantedPattern is the pattern for the next 3 balls, indexerPattern is what is in the indexer
     // possible values for indexerPattern=empty, purple, green, unknown(there is a ball, we don't know what color)
@@ -203,6 +205,15 @@ public class TeleOpMainPedroTemplate extends OpMode {
             }
             // TODO: once turret is wrriten, do manual turret/hood controls and manual flywheel speed
             // variables: pad2LeftStickY=hoodInput, pad2RightStickX=turretInput, pad2RightBumper=close launch, pad2RightTrigger=far launch
+            if (gamepad2.right_bumper)
+            {
+                flywheelSpeed = 500;
+            }
+            else if (gamepad2.right_trigger > triggerSense)
+            {
+                flywheelSpeed = 1000;
+            }
+            turret.updateManual(gamepad2.right_stick_x,gamepad2.left_stick_y, flywheelSpeed);
         }
         else
         {
@@ -219,6 +230,15 @@ public class TeleOpMainPedroTemplate extends OpMode {
             }
             // TODO: once turret is written, call auto update with flywheel launch
             // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense=launch
+            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense)
+            {
+                launching = true;
+            }
+            else
+            {
+                launching = false;
+            }
+            turret.updateAutoTurret(launching);
         }
 
         // launch sequence
