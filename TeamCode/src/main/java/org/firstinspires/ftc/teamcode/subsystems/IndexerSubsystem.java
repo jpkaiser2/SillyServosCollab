@@ -23,7 +23,7 @@ public class IndexerSubsystem {
 
     // Magnet sensor logic
 
-    // switch to true if we start the robot with the magnet, needs to be accurate
+    // switch to true if we start the robot with the magnet
     private static boolean previousMagnetState = false;
     // current encoder value needs to be +- this amount to expected to regester the
     // magnet, approx value
@@ -75,7 +75,9 @@ public class IndexerSubsystem {
         this.feedLeverServo.setDirection(Servo.Direction.REVERSE);
         this.feedLeverServo.setPosition(Math.min(leverIdlePos, leverMaxPos));
 
+        // Map the magnet sensor (digital touch-style hall sensor)
         this.magnetSensor = hardwareMap.get(TouchSensor.class, "magnet");
+        // Initialize previous state in case we boot while on the magnet
         previousMagnetState = magnetSensor.isPressed();
     }
 
@@ -252,5 +254,12 @@ public class IndexerSubsystem {
     public boolean getMagnetState()
     {
         return previousMagnetState;
+    }
+
+    // added to help us test magnet stuff
+    public void slowMove(double speed)
+    {
+        indexerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        indexerMotor.setPower(speed);
     }
 }

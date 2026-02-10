@@ -306,6 +306,20 @@ public class MyTerribleCode extends OpMode {
         autoLaunching = launch.getStatus();
         checkingPattern = pattern.getStatus();
 
+        //slow motor move for testing
+        if (gamepad1.left_trigger > 0.4)
+        {
+            indexer.slowMove(-0.05);
+        }
+        else if (gamepad1.right_trigger > 0.4)
+        {
+            indexer.slowMove(0.05);
+        }
+        else
+        {
+            indexer.slowMove(0);
+        }
+
         // Telemetry
         telemetry.addData("currentColor", pattern.getHsv()[0]);
         telemetry.addData("overrideState", override);
