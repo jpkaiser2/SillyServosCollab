@@ -13,17 +13,10 @@ import org.firstinspires.ftc.teamcode.subsystems.FlywheelSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.drive.DriveBase;
 import org.firstinspires.ftc.teamcode.subsystems.drive.PedroDrive;
+import org.firstinspires.ftc.teamcode.subsystems.CheckPatternSubsystem;
 
-/**
- * TeleOpPedroTemplate
- *
- * How to swap RawMecanumDrive to Pedro later:
- * - Create a class PedroDrive implements DriveBase with the same methods.
- * - In init(), replace `drive = new RawMecanumDrive(...)` with `drive = new PedroDrive(...)`.
- * - Keep calls to drive.setDriverInput(...) and drive.update() the same.
- */
 @TeleOp(name = "TeleOpMainPedro", group = "TeleOp")
-public class MyTerribleCode extends OpMode {
+public class TeleOpMainPedroTemplate extends OpMode {
 
     // HardwareMap names (edit these to match your configuration)
     private static final String FRONT_LEFT = "frontLeft";
@@ -149,41 +142,41 @@ public class MyTerribleCode extends OpMode {
         // set indexer positions
         if (!(checkingPattern || autoLaunching))
         {
-            if (gamepad1.dpad_left && prevIndex != "P1Left")
+            if (gamepad1.dpad_left && !"P1Left".equals(prevIndex))
             {
                 indexer.setIndexerPosition("Intake1");
                 intakeHold = true;
-                intake.setRotationInput(-1);
+                intake.setHoldUp(true);
             }
-            else if (gamepad1.dpad_down && prevIndex != "P1Down")
+            else if (gamepad1.dpad_down && !"P1Down".equals(prevIndex))
             {
                 indexer.setIndexerPosition("Intake2"); 
                 intakeHold = true;
-                intake.setRotationInput(-1);
+                intake.setHoldUp(true);
             }
-            else if (gamepad1.dpad_right && prevIndex != "P1Right")
+            else if (gamepad1.dpad_right && !"P1Right".equals(prevIndex))
             {
                 indexer.setIndexerPosition("Intake3");
                 intakeHold = true;
-                intake.setRotationInput(-1);
+                intake.setHoldUp(true);
             }
-            else if (gamepad2.dpad_left && prevIndex != "P2Left")
+            else if (gamepad2.dpad_left && !"P2Left".equals(prevIndex))
             {
                 indexer.setIndexerPosition("Launch1");
                 intakeHold = true;
-                intake.setRotationInput(-1);
+                intake.setHoldUp(true);
             }
-            else if (gamepad2.dpad_down && prevIndex != "P2Down")
+            else if (gamepad2.dpad_down && !"P2Down".equals(prevIndex))
             {
                 indexer.setIndexerPosition("Launch2");
                 intakeHold = true;
-                intake.setRotationInput(-1);
+                intake.setHoldUp(true);
             }
-            else if (gamepad2.dpad_right && prevIndex != "P2Right")
+            else if (gamepad2.dpad_right && !"P2Right".equals(prevIndex))
             {                
                 indexer.setIndexerPosition("Launch3");
                 intakeHold = true;
-                intake.setRotationInput(-1);
+                intake.setHoldUp(true);
             }
 
             // pulse launch arm
@@ -197,32 +190,32 @@ public class MyTerribleCode extends OpMode {
         // Override button
         if (override)
         {
-            // ramp control
+            // ramp control: up/down only
             if (gamepad2.left_bumper || gamepad1.left_bumper || gamepad1.left_trigger > triggerSense)
             {
-                // lower ramp
-                intake.setRampPosition(-1);
+                // lower ramp (down)
+                intake.setRampDown();
             }
             else
             {
-                // raise ramp
-                intake.setRampPosition(1);
+                // raise ramp (up)
+                intake.setRampUp();
             }
             // TODO: once turret is wrriten, do manual turret/hood controls and manual flywheel speed
             // variables: pad2LeftStickY=hoodInput, pad2RightStickX=turretInput, pad2RightBumper=close launch, pad2RightTrigger=far launch
         }
         else
         {
-            // auto ramp control
+            // auto ramp control: up/down only
             if ((gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) && !intakeHold)
             {
-                // lower ramp
-                intake.setRampPosition(-1);
+                // lower ramp (down)
+                intake.setRampDown();
             }
             else
             {
-                // raise ramp
-                intake.setRampPosition(1);
+                // raise ramp (up)
+                intake.setRampUp();
             }
             // TODO: once turret is written, call auto update with flywheel launch
             // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense=launch
@@ -237,7 +230,7 @@ public class MyTerribleCode extends OpMode {
             }
             else if (!autoLaunching)
             {
-                launch.startlaunch(wantedPattern, indexerPattern);
+                launch.startLaunch(wantedPattern, indexerPattern);
             }
         }
         // pattern sequence
@@ -256,15 +249,15 @@ public class MyTerribleCode extends OpMode {
         // set wanted pattern
         if (gamepad2.x)
         {
-            wantedPattern = {"green", "purple", "purple"};
+            wantedPattern = new String[]{"green", "purple", "purple"};
         }
         else if (gamepad2.a)
         {
-            wantedPattern = {"purple", "green", "purple"};
+            wantedPattern = new String[]{"purple", "green", "purple"};
         }
         else if (gamepad2.b)
         {
-            wantedPattern = {"purple", "purple", "green"};
+            wantedPattern = new String[]{"purple", "purple", "green"};
         }
 
         // Maintain lever timing and magnet
@@ -286,6 +279,7 @@ public class MyTerribleCode extends OpMode {
         if (!indexer.isMoving()) 
         {
             intakeHold = false;
+            intake.setHoldUp(false);
         }
 
         // define previous indexer input
@@ -332,6 +326,8 @@ public class MyTerribleCode extends OpMode {
         telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
         telemetry.addData("Turret", turret.getStatus());
         telemetry.addData("Intake", intake.getStatus());
+        telemetry.addData("IntakeHold", intakeHold);
+        telemetry.addData("IntakeHoldUp", intake.isHoldUp());
         telemetry.addData("Indexer", indexer.getStatus());
         // telemetry.addData("Buffer", String.format("head=%d slots=[%s,%s,%s]", head, slots[0], slots[1], slots[2]));
         telemetry.addData("Flywheel", flywheel.getStatus());

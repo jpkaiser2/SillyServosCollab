@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import android.graphics.Color;
 
 public class CheckPatternSubsystem
@@ -27,7 +28,7 @@ public class CheckPatternSubsystem
     {
         this.indexer = indexer;
         checking = false;
-        indexerPattern = {"empty", "empty", "empty"};
+        indexerPattern = new String[]{"empty", "empty", "empty"};
         step = 0;
         moving = false;
         this.colorSensor = hardwareMap.get(NormalizedColorSensor.class, colorSensorName);
@@ -51,7 +52,7 @@ public class CheckPatternSubsystem
                     moving = true;
                     indexer.setIndexerPosition("Launch1");
                 }
-                else if (moving && !indxer.isMoving())
+                else if (moving && !indexer.isMoving())
                 {
                     indexerPattern[0] = getColor();
                     moving = false;
@@ -65,7 +66,7 @@ public class CheckPatternSubsystem
                     moving = true;
                     indexer.setIndexerPosition("Launch2");
                 }
-                else if (moving && !indxer.isMoving())
+                else if (moving && !indexer.isMoving())
                 {
                     indexerPattern[1] = getColor();
                     moving = false;
@@ -79,7 +80,7 @@ public class CheckPatternSubsystem
                     moving = true;
                     indexer.setIndexerPosition("Launch3");
                 }
-                else if (moving && !indxer.isMoving())
+                else if (moving && !indexer.isMoving())
                 {
                     indexerPattern[2] = getColor();
                     moving = false;

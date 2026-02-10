@@ -15,8 +15,8 @@ public class LaunchSubsystem
     {
         this.indexer = indexer;
         launching = false;
-        wantedPattern = {"green", "purple", "purple"};
-        indexerPattern = {"empty", "empty", "empty"};
+        wantedPattern = new String[]{"green", "purple", "purple"};
+        indexerPattern = new String[]{"empty", "empty", "empty"};
         step = 0;
         moving = false;
         pulsing = false;
@@ -40,10 +40,10 @@ public class LaunchSubsystem
             }
             else if (step == 1)
             {
-                if (!pulsing)
+                if (!pulsing) {
                     indexer.handleLeverButton(true);
                     pulsing = true;
-                else if (pulsing && !indexer.getLeverState())
+                } else if (pulsing && !indexer.getLeverState())
                 {
                     pulsing = false;
                     step++;
@@ -62,10 +62,10 @@ public class LaunchSubsystem
             }
             else if (step == 3)
             {
-                if (!pulsing)
+                if (!pulsing) {
                     indexer.handleLeverButton(true);
                     pulsing = true;
-                else if (pulsing && !indexer.getLeverState())
+                } else if (pulsing && !indexer.getLeverState())
                 {
                     pulsing = false;
                     step++;
@@ -84,10 +84,10 @@ public class LaunchSubsystem
             }
             else if (step == 5)
             {
-                if (!pulsing)
+                if (!pulsing) {
                     indexer.handleLeverButton(true);
                     pulsing = true;
-                else if (pulsing && !indexer.getLeverState())
+                } else if (pulsing && !indexer.getLeverState())
                 {
                     pulsing = false;
                     launching = false;
@@ -97,11 +97,11 @@ public class LaunchSubsystem
         }
         else
         {
-            // if not launching, reset all variables
-            private boolean launching = false;
-            private int step = 0;
-            private boolean moving = false;
-            private boolean pulsing = false;
+            // if not launching, reset state variables
+            launching = false;
+            step = 0;
+            moving = false;
+            pulsing = false;
             position = 0;
         }
     }

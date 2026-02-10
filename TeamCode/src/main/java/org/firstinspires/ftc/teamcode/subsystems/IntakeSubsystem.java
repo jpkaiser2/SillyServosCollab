@@ -10,19 +10,23 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class IntakeSubsystem {
     private final DcMotorEx intakeMotor; // Core Hex motor
     private final Servo intakeAngleServo; // rotates intake
-    private final Servo rampServo; // servo for the ramp
+    private Servo rampServo; // ramp servo
 
     // Holds the last commanded intake angle position (0..1)
     private double intakeAnglePos = 0.5;
     private static final double ANGLE_DEADBAND = 0.05; // stick deadband to hold position
     private static final double INTAKE_UP_POS = 1.0; // up position to avoid interference
+   
+    // Ramp direction: min = up, max = down
+    private static final double RAMP_UP_POS = 0.2; // slightly above absolute min to avoid overtravel
+    private static final double RAMP_DOWN_POS = 1.0;  // full down
 
     // When true, intakeAngleServo is forced to the up position and held
     private boolean holdUp = false;
     private boolean requestStageFlag = false;
     private boolean prevStageButton = false;
 
-    public IntakeSubsystem(HardwareMap hardwareMap, String intakeMotorName, String intakeAngleServoName, String rampServoName) {
+    public IntakeSubsystem(HardwareMap hardwareMap, String intakeMotorName, String intakeAngleServoName) {
         this.intakeMotor = hardwareMap.get(DcMotorEx.class, intakeMotorName);
         this.intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         this.intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -30,9 +34,24 @@ public class IntakeSubsystem {
 
         this.intakeAngleServo = hardwareMap.get(Servo.class, intakeAngleServoName);
         this.intakeAngleServo.setPosition(intakeAnglePos);
+        // Ramp servo not provided via this constructor
+        this.rampServo = null;
+    }
 
-        this.rampServo = hardwareMap.get(Servo.class, rampServoName);
-        this.rampServo.setPosition(1);
+    //Overloaded constructor to include ramp servo control.
+    public IntakeSubsystem(HardwareMap hardwareMap,
+                           String intakeMotorName,
+                           String intakeAngleServoName,
+                           String rampServoName) {
+        this(hardwareMap, intakeMotorName, intakeAngleServoName);
+        try {
+            this.rampServo = hardwareMap.get(Servo.class, rampServoName);
+            // Initialize ramp to MIN (up) per updated direction
+            this.rampServo.setPosition(RAMP_UP_POS);
+        } catch (Exception ignore) {
+            // If not found, leave rampServo as null
+            this.rampServo = null;
+        }
     }
 
     /**
@@ -92,9 +111,10 @@ public class IntakeSubsystem {
     }
 
     public String getStatus() {
+        double rampPos = (rampServo != null) ? rampServo.getPosition() : -1.0;
         return String.format(
-                "intakePower=%.2f, intakeAngle=%.2f, requestStage=%s",
-                intakeMotor.getPower(), intakeAnglePos, requestStageFlag);
+                "intakePower=%.2f, intakeAngle=%.2f, ramp=%.2f, requestStage=%s",
+                intakeMotor.getPower(), intakeAnglePos, rampPos, requestStageFlag);
     }
 
     /** Enable or disable holding the intake angle in the up position. */
@@ -109,11 +129,23 @@ public class IntakeSubsystem {
     /** Whether the intake angle is currently being held up. */
     public boolean isHoldUp() { return holdUp; }
 
-    public void setRampPosition(double inputPosition)
-    {
-        if (inputPosition > -1 && inputPosition < 1)
-        {
-            rampServo.setPosition(inputPosition);
+    // Ramp controls
+    /** Set ramp to minimum (up). */
+    public void setRampUp() {
+        if (rampServo != null) {
+            rampServo.setPosition(RAMP_UP_POS);
         }
+    }
+
+    /** Set ramp to maximum (down). */
+    public void setRampDown() {
+        if (rampServo != null) {
+            rampServo.setPosition(RAMP_DOWN_POS);
+        }
+    }
+
+    /** Get current ramp position, or -1 if unavailable. */
+    public double getRampPosition() {
+        return (rampServo != null) ? rampServo.getPosition() : -1.0;
     }
 }

@@ -175,6 +175,9 @@ public class IndexerSubsystem {
             case "Intake3":
                 target = INTAKE_3;
                 break;
+            default:
+                // Unknown label; do nothing
+                return;
         }
 
         indexerMotor.setTargetPosition(target);
@@ -208,8 +211,8 @@ public class IndexerSubsystem {
 
     public String getStatus() {
         boolean busy = indexerMotor.getMode() == DcMotor.RunMode.RUN_TO_POSITION && indexerMotor.isBusy();
-        return String.format("indexerSel=%s mode=%s busy=%s leverPulsing=%s",
-                selection, indexerMotor.getMode(), busy, leverPulsing);
+        return String.format("mode=%s busy=%s cur=%d tgt=%d leverPulsing=%s",
+                indexerMotor.getMode(), busy, indexerMotor.getCurrentPosition(), indexerMotor.getTargetPosition(), leverPulsing);
     }
 
     /** Whether the indexer is currently moving toward a target position. */
