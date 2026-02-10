@@ -12,10 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Configurable
 public class IndexerSubsystem {
-    public enum Selection {
-        POSITION_1, POSITION_2, POSITION_3
-    }
-
+    
     @IgnoreConfigurable
     private final DcMotorEx indexerMotor; // motor with encoder controlling indexer
     @IgnoreConfigurable
@@ -28,9 +25,10 @@ public class IndexerSubsystem {
 
     // switch to true if we start the robot with the magnet
     private static boolean previousMagnetState = false;
-    // current encoder value needs to be +- this amount to expected to regester the magnet, approx value
-    public static final int approxEncoderAccuracy = 50;
-    public static int magnetBasedOffset;
+    // current encoder value needs to be +- this amount to expected to regester the
+    // magnet, approx value
+    public static final int approxEncoderAccuracy = 20;
+    public static int magnetBasedOffset = 0;
 
     // default value in case we start on the magnet, may be slightly inaccurate, but
     // should fix itself after 1 rotation
@@ -43,17 +41,14 @@ public class IndexerSubsystem {
     public static int magnetPosition2 = 175;
 
     // Preset positions in encoder ticks (user-provided; tune as needed)
-    public static int POSITION_1 = 0;
-    public static int POSITION_2 = 194;
-    public static int POSITION_3 = 98;
+    public static int LAUNCH_1 = 0;
+    public static int LAUNCH_2 = 194;
+    public static int LAUNCH_3 = 98;
 
     // Secondary collection positions in encoder ticks
-    public static int COLLECTION_1 = 148;
-    public static int COLLECTION_2 = 48;
-    public static int COLLECTION_3 = 243;
-
-    @IgnoreConfigurable
-    private Selection selection = Selection.POSITION_2; // default to middle
+    public static int INTAKE_1 = 148;
+    public static int INTAKE_2 = 48;
+    public static int INTAKE_3 = 243;
 
     // Lever pulse config
     @IgnoreConfigurable
@@ -88,6 +83,8 @@ public class IndexerSubsystem {
 
     public void updateMagnet() {
         // rising edge
+        // commented out for testing(it should be working tho)
+        /*
         if (!previousMagnetState && magnetSensor.isPressed()) {
             // at magnet 1 or 2
             if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
@@ -136,6 +133,7 @@ public class IndexerSubsystem {
         }
         // update previous state for falling/rising edge
         previousMagnetState = magnetSensor.isPressed();
+        */
     }
 
     public void setLeverConfig(long pulseMs, double idle, double engaged) {
@@ -154,51 +152,35 @@ public class IndexerSubsystem {
         }
     }
 
-    /** Choose which preset aligns with the turret. */
-    public void setSelection(Selection sel) {
-        this.selection = sel;
+    public void setIndexerPosition(String inputPosition)
+    {
         int target;
-        switch (sel) {
-            case POSITION_1:
-                target = POSITION_1;
+        switch (inputPosition)
+        {
+            case "Launch1":
+                target = LAUNCH_1;
                 break;
-            case POSITION_2:
-                target = POSITION_2;
+            case "Launch2":
+                target = LAUNCH_2;
                 break;
-            case POSITION_3:
-            default:
-                target = POSITION_3;
+            case "Launch3":
+                target = LAUNCH_3;
+                break;
+            case "Intake1":
+                target = INTAKE_1;
+                break;
+            case "Intake2":
+                target = INTAKE_2;
+                break;
+            case "Intake3":
+                target = INTAKE_3;
                 break;
         }
-        indexerMotor.setTargetPosition(target);
-        indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        indexerMotor.setPower(0.6); // move power; tune as needed
-    }
 
-    /** Choose which collection preset to move to. */
-    public void setCollectionSelection(Selection sel) {
-        int target;
-        switch (sel) {
-            case POSITION_1:
-                target = COLLECTION_1;
-                break;
-            case POSITION_2:
-                target = COLLECTION_2;
-                break;
-            case POSITION_3:
-            default:
-                target = COLLECTION_3;
-                break;
-        }
         indexerMotor.setTargetPosition(target);
         indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         indexerMotor.setPower(0.6);
     }
-
-    public Selection getSelection() {
-        return selection;
-    }
-
     // Manual mode APIs removed
 
     /** Call once per loop to maintain lever pulse timing. */
@@ -243,6 +225,11 @@ public class IndexerSubsystem {
     /** Target encoder position when running to position. */
     public int getTargetPosition() {
         return indexerMotor.getTargetPosition();
+    }
+
+    public boolean getLeverState()
+    {
+        return leverPulsing;
     }
 
     /** Nudge the indexer target by a number of encoder ticks. */

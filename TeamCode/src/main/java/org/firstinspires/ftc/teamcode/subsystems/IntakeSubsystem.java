@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class IntakeSubsystem {
     private final DcMotorEx intakeMotor; // Core Hex motor
     private final Servo intakeAngleServo; // rotates intake
+    private final Servo rampServo; // servo for the ramp
 
     // Holds the last commanded intake angle position (0..1)
     private double intakeAnglePos = 0.5;
@@ -21,7 +22,7 @@ public class IntakeSubsystem {
     private boolean requestStageFlag = false;
     private boolean prevStageButton = false;
 
-    public IntakeSubsystem(HardwareMap hardwareMap, String intakeMotorName, String intakeAngleServoName) {
+    public IntakeSubsystem(HardwareMap hardwareMap, String intakeMotorName, String intakeAngleServoName, String rampServoName) {
         this.intakeMotor = hardwareMap.get(DcMotorEx.class, intakeMotorName);
         this.intakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         this.intakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -29,6 +30,9 @@ public class IntakeSubsystem {
 
         this.intakeAngleServo = hardwareMap.get(Servo.class, intakeAngleServoName);
         this.intakeAngleServo.setPosition(intakeAnglePos);
+
+        this.rampServo = hardwareMap.get(Servo.class, rampServoName);
+        this.rampServo.setPosition(1);
     }
 
     /**
@@ -104,4 +108,12 @@ public class IntakeSubsystem {
 
     /** Whether the intake angle is currently being held up. */
     public boolean isHoldUp() { return holdUp; }
+
+    public void setRampPosition(double inputPosition)
+    {
+        if (inputPosition > -1 && inputPosition < 1)
+        {
+            rampServo.setPosition(inputPosition);
+        }
+    }
 }
