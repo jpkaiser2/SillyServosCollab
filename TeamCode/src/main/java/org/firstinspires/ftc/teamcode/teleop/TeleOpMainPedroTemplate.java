@@ -71,10 +71,10 @@ public class TeleOpMainPedroTemplate extends OpMode {
         HardwareMap hw = hardwareMap;
         // Use Pedro Pathing Follower for teleop drive
         drive = new PedroDrive(hw);
-        turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE);
         intake = new IntakeSubsystem(hw, INTAKE, INTAKE_ANGLE, RAMP);
         indexer = new IndexerSubsystem(hw, INDEXER, FEED_LEVER);
         flywheel = new FlywheelSubsystem(hw, FLYWHEEL);
+        turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE, flywheel);
         launch = new LaunchSubsystem(indexer);
         pattern = new CheckPatternSubsystem(hw, indexer, COLOR_SENSOR);
         // Enable dashboard configurables for indexer presets

@@ -1,3 +1,4 @@
+
 package org.firstinspires.ftc.teamcode.subsystems;
 
 
@@ -224,5 +225,3 @@ public class AprilTagWebcam {
        detectedTags.clear();
    }
 }
-
-

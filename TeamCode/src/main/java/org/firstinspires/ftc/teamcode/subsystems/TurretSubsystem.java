@@ -43,7 +43,7 @@ public class TurretSubsystem {
    private double maxDeg = 180.0;
 
 
-   public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName, Telemetry telemetry) {
+   public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName, Telemetry telemetry, FlywheelSubsystem flywheel) {
        this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
        this.turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
        this.turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -57,7 +57,7 @@ public class TurretSubsystem {
        // Soft-zero at init: turret angle will be 0 at whatever position you are in during init.
        zeroTurretHere();
        camera.init(hardwareMap,telemetry);
-       flywheel = new FlywheelSubsystem(hardwareMap, "flywheel");
+       this.flywheel = flywheel;
    }
 
 
