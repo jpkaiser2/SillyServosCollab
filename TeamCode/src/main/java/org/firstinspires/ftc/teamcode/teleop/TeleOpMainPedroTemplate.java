@@ -74,7 +74,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
         intake = new IntakeSubsystem(hw, INTAKE, INTAKE_ANGLE, RAMP);
         indexer = new IndexerSubsystem(hw, INDEXER, FEED_LEVER);
         flywheel = new FlywheelSubsystem(hw, FLYWHEEL);
-        turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE, flywheel);
+        turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE, telemetry, flywheel);
         launch = new LaunchSubsystem(indexer);
         pattern = new CheckPatternSubsystem(hw, indexer, COLOR_SENSOR);
         // Enable dashboard configurables for indexer presets
@@ -104,7 +104,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
 
 
         // toggle override after 1 second
-        if (gamepad2.right_trigger > triggerSense)
+        if (gamepad2.left_trigger > triggerSense)
         {
             if (overrideTime.time() >= 1)
             {

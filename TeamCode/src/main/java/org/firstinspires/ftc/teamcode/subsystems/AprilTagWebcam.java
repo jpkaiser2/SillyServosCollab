@@ -73,13 +73,13 @@ public class AprilTagWebcam {
 
 
    /** Set the only tag ID the system is allowed to track (locked target). */
-   public void setTargetTagId(int id) {
+   public void setTargetTagID(int id) {
        this.targetTagId = id;
    }
 
 
    /** Returns the locked target tag ID. */
-   public int getTargetTagId() {
+   public int getTargetTagID() {
        return targetTagId;
    }
 
@@ -114,7 +114,7 @@ public class AprilTagWebcam {
        double sideCY = target.ftcPose.y + 8.5;
        double sideC = Math.sqrt(sideCX*sideCX+sideCY*sideCY);
        //Side C is the distance from the center of the Turret to the AprilTag
-       double angleB = Math.acos(((sideB*sideB)-(sideA*sideA)-(sideC*sideC))/(-2*sideA*sideC))*180/Math.Pi;
+       double angleB = Math.acos(((sideB*sideB)-(sideA*sideA)-(sideC*sideC))/(-2*sideA*sideC))*180/Math.PI;
        //Angle B is the angle between Sides A & C
        double TurretBearing = 90-54.782-angleB;
        //bearing = 90-arctan(8.5/6)-angleB

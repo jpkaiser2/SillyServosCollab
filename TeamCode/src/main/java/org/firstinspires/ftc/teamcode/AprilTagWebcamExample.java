@@ -62,7 +62,7 @@ public class AprilTagWebcamExample extends OpMode {
     @Override
     public void init() {
         aprilTagWebcam.init(hardwareMap, telemetry);
-        aprilTagWebcam.setTargetTagId(TARGET_TAG_ID);
+        aprilTagWebcam.setTargetTagID(TARGET_TAG_ID);
 
         turret = new TurretSubsystem(hardwareMap, TURRET_MOTOR, TURRET_ANGLE_SERVO);
         turret.setMaxPower(MAX_POWER);
