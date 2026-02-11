@@ -84,7 +84,7 @@ public class IndexerSubsystem {
     public void updateMagnet() {
         // rising edge
         // commented out for testing(it should be working tho)
-        /*
+
         if (!previousMagnetState && magnetSensor.isPressed()) {
             // at magnet 1 or 2
             if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
@@ -104,12 +104,12 @@ public class IndexerSubsystem {
                 // rising/falling edge of it
                 int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
                 magnetBasedOffset = magnetPosition1 - average;
-                POSITION_1 += magnetBasedOffset;
-                POSITION_2 += magnetBasedOffset;
-                POSITION_3 += magnetBasedOffset;
-                COLLECTION_1 += magnetBasedOffset;
-                COLLECTION_2 += magnetBasedOffset;
-                COLLECTION_3 += magnetBasedOffset;
+                LAUNCH_1 += magnetBasedOffset;
+                LAUNCH_2 += magnetBasedOffset;
+                LAUNCH_3 += magnetBasedOffset;
+                INTAKE_1 += magnetBasedOffset;
+                INTAKE_2 += magnetBasedOffset;
+                INTAKE_3 += magnetBasedOffset;
                 magnetPosition1 += magnetBasedOffset;
                 magnetPosition2 += magnetBasedOffset;
             }
@@ -121,19 +121,19 @@ public class IndexerSubsystem {
                 // rising/falling edge of it
                 int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
                 magnetBasedOffset = magnetPosition2 - average;
-                POSITION_1 += magnetBasedOffset;
-                POSITION_2 += magnetBasedOffset;
-                POSITION_3 += magnetBasedOffset;
-                COLLECTION_1 += magnetBasedOffset;
-                COLLECTION_2 += magnetBasedOffset;
-                COLLECTION_3 += magnetBasedOffset;
+                LAUNCH_1 += magnetBasedOffset;
+                LAUNCH_2 += magnetBasedOffset;
+                LAUNCH_3 += magnetBasedOffset;
+                INTAKE_1 += magnetBasedOffset;
+                INTAKE_2 += magnetBasedOffset;
+                INTAKE_3 += magnetBasedOffset;
                 magnetPosition1 += magnetBasedOffset;
                 magnetPosition2 += magnetBasedOffset;
             }
         }
         // update previous state for falling/rising edge
         previousMagnetState = magnetSensor.isPressed();
-        */
+
     }
 
     public void setLeverConfig(long pulseMs, double idle, double engaged) {
@@ -182,7 +182,7 @@ public class IndexerSubsystem {
 
         indexerMotor.setTargetPosition(target);
         indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        indexerMotor.setPower(0.6);
+        indexerMotor.setPower(0.3);
     }
     // Manual mode APIs removed
 
@@ -259,10 +259,4 @@ public class IndexerSubsystem {
         return previousMagnetState;
     }
 
-    // added to help us test magnet stuff
-    public void slowMove(double speed)
-    {
-        indexerMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        indexerMotor.setPower(speed);
-    }
 }

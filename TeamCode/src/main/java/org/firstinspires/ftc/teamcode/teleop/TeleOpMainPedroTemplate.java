@@ -104,7 +104,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
         // toggle override after 1 second
         if (gamepad2.right_trigger > triggerSense)
         {
-            if (overrideTime.seconds() >= 1)
+            if (overrideTime.time() >= 1)
             {
                 override = !override;
                 overrideTime.reset();
@@ -121,7 +121,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
         double x = gamepad1.left_stick_x;   // strafe
         double rx = gamepad1.right_stick_x; // rotation
 
-        drive.setDriverInput(x, y, rx, false);
+        drive.setDriverInput(x, y, rx, true);
         drive.update();
         
         // intaking
@@ -130,11 +130,11 @@ public class TeleOpMainPedroTemplate extends OpMode {
         {
             if (gamepad1.right_trigger > triggerSense)
             {
-                intake.setRotationInput(-1);
+                intake.setRotationInput(-0.5);
             }
             else if (gamepad1.right_bumper)
             {
-                intake.setRotationInput(1);
+                intake.setRotationInput(0.5);
             }
         }
 
@@ -282,7 +282,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
             intake.setHoldUp(false);
         }
 
-        // define previous indexer input
+        // define previous indexer input (clear when no dpad is pressed to allow repeat presses)
         if (gamepad1.dpad_left)
             prevIndex = "P1Left";
         else if (gamepad1.dpad_down)
@@ -299,20 +299,6 @@ public class TeleOpMainPedroTemplate extends OpMode {
         // update bools for launching/checking pattern
         autoLaunching = launch.getStatus();
         checkingPattern = pattern.getStatus();
-
-        //slow motor move for testing
-        if (gamepad1.left_trigger > 0.4)
-        {
-            indexer.slowMove(-0.05);
-        }
-        else if (gamepad1.right_trigger > 0.4)
-        {
-            indexer.slowMove(0.05);
-        }
-        else
-        {
-            indexer.slowMove(0);
-        }
 
         // Telemetry
         telemetry.addData("currentColor", pattern.getHsv()[0]);
