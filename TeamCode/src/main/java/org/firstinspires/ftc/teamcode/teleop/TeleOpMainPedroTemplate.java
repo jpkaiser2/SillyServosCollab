@@ -47,6 +47,9 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private boolean intakeHold = false;
     private boolean override = false;
     private ElapsedTime overrideTime = new ElapsedTime();
+    // Track press state and per-hold toggle count to avoid unintended flips on release
+    private boolean overrideWasPressed = false;
+    private int overrideToggleCount = 0;
 
     // fixing ftc's very annoying code lol(bumpers are bools, triggers are doubles)
     private double p1LeftBumperToDouble;
@@ -54,7 +57,8 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private double p2LeftBumperToDouble;
     private double p2RightBumperToDouble;
     private final double triggerSense = 0.4;
-    private double flywheelSpeed= 20;
+    // Target flywheel speed in RPM (96 rpm ≈ 1.6 rps)
+    private double flywheelSpeed= 96;
     private boolean launching = false;
     
     // Default values, wantedPattern is the pattern for the next 3 balls, indexerPattern is what is in the indexer
@@ -103,19 +107,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
             p2RightBumperToDouble = 0.0;
 
 
-        // toggle override after 1 second
-        if (gamepad2.left_trigger > triggerSense)
-        {
-            if (overrideTime.time() >= 1)
-            {
-                override = !override;
-                overrideTime.reset();
-            }
-        }
-        else
-        {
-            overrideTime.reset();
-        }
+        override = gamepad2.left_trigger > triggerSense;
 
         
         // Read drive inputs (FTC sticks: up is -y)
@@ -205,13 +197,13 @@ public class TeleOpMainPedroTemplate extends OpMode {
             }
             // TODO: once turret is wrriten, do manual turret/hood controls and manual flywheel speed
             // variables: pad2LeftStickY=hoodInput, pad2RightStickX=turretInput, pad2RightBumper=close launch, pad2RightTrigger=far launch
-            if (gamepad2.right_bumper)
+            // In override, hold a constant speed around 1.6 rps
+            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense)
             {
-                flywheelSpeed = 500;
+                flywheelSpeed = 96; // 96 rpm
             }
-            else if (gamepad2.right_trigger > triggerSense)
-            {
-                flywheelSpeed = 1000;
+            else {
+                flywheelSpeed = 0;
             }
             turret.updateManual(gamepad2.right_stick_x,gamepad2.left_stick_y, flywheelSpeed);
         }
@@ -232,10 +224,12 @@ public class TeleOpMainPedroTemplate extends OpMode {
             // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense=launch
             if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense)
             {
+                telemetry.addLine("Test 2");
                 launching = true;
             }
             else
             {
+                telemetry.addLine("test");
                 launching = false;
             }
             turret.updateAutoTurret(launching);

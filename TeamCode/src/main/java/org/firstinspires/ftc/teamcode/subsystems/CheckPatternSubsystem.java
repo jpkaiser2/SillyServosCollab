@@ -20,9 +20,9 @@ public class CheckPatternSubsystem
     private float value;
     
     // color values(need to test)
-    private final int green = 120;
-    private final int purple = 300;
-    private final int colorAccuracy = 50;
+    private final int green = 140;
+    private final int purple = 250;
+    private final int colorAccuracy = 40;
 
     public CheckPatternSubsystem(HardwareMap hardwareMap, IndexerSubsystem indexer, String colorSensorName)
     {

@@ -15,6 +15,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class TurretSubsystem {
    private final DcMotorEx turretMotor;
    private final Servo turretAngleServo;
+   private Telemetry telemetry;
 
 
    // ===== Tuning constants MUST be set for turret =====
@@ -46,6 +47,7 @@ public class TurretSubsystem {
    public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName, Telemetry telemetry, FlywheelSubsystem flywheel) {
        this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
        this.turretMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+       this.turretMotor.setTargetPosition(0);
        this.turretMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
        this.turretMotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
@@ -58,6 +60,8 @@ public class TurretSubsystem {
        zeroTurretHere();
        camera.init(hardwareMap,telemetry);
        this.flywheel = flywheel;
+
+       this.telemetry=telemetry;
    }
 
 
@@ -157,21 +161,22 @@ public class TurretSubsystem {
        // Maintain the last commanded angle servo position
        turretAngleServo.setPosition(angleServoPos);
        //flywheelSpeed is in rpm
-       //devide by 60 to convert to rps
+       //divide by 60 to convert to rps
        flywheel.setVelocity(flywheelSpeed/60);
        
    }
   
    public void updateAutoTurret(boolean launch) {
-       double defualtFlywheelVelocity = 100.0/60;
-       //100 rpm for now
+       double defualtFlywheelVelocity = 1.6; // rps target
+       // Hold constant speed at ~1.6 rps when idle
        runToAngle(camera.getTargetTurretBearing());     
        //TODO: add the kinematics
        if (launch){
-        this.doKinematics(camera.getTargetTurretDistance());
+        this.doKinematics(camera.getTargetTurretDistance()*0.0254);
        }
        else{
-        flywheel.setVelocity(defualtFlywheelVelocity*0.0254);
+           telemetry.addData("Flywheel idle speed in rps", defualtFlywheelVelocity);
+        //flywheel.setVelocity(defualtFlywheelVelocity);
        }
        
    }
