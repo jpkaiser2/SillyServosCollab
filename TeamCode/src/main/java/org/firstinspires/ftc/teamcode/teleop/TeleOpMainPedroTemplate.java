@@ -23,16 +23,16 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private static final String FRONT_RIGHT = "frontRight";
     private static final String BACK_LEFT = "backLeft";
     private static final String BACK_RIGHT = "backRight";
-    private static final String TURRET = "turret";           // motor
-    private static final String TURRET_ANGLE = "turretAngle"; // servo
-    private static final String INTAKE = "intake";            // core hex motor
-    private static final String INTAKE_ANGLE = "intakeAngle"; // servo
-    private static final String FEED_LEVER = "feedLever";     // servo
-    private static final String INDEXER = "indexer";          // motor
-    private static final String FLYWHEEL = "flywheel";        // motor
-    private static final String RAMP = "ramp"; // servo
+    private static final String TURRET = "turret";            // motor
+    private static final String TURRET_ANGLE = "turretAngle";  // servo
+    private static final String INTAKE = "intake";             // core hex motor
+    private static final String INTAKE_ANGLE = "intakeAngle";  // servo
+    private static final String FEED_LEVER = "feedLever";      // servo
+    private static final String INDEXER = "indexer";           // motor
+    private static final String FLYWHEEL = "flywheel";         // motor
+    private static final String RAMP = "ramp";                 // servo
     private static final String COLOR_SENSOR = "sensor_color"; // color sensor
-    private static final String IMU = "imu"; // optional
+    private static final String IMU = "imu";                   // optional
 
     private DriveBase drive;
     private TurretSubsystem turret;
@@ -41,10 +41,11 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private FlywheelSubsystem flywheel;
     private LaunchSubsystem launch;
     private CheckPatternSubsystem pattern;
+
     // Indexer preset control
-    
     private String prevIndex = "";
     private boolean intakeHold = false;
+
     private boolean override = false;
     private ElapsedTime overrideTime = new ElapsedTime();
     // Track press state and per-hold toggle count to avoid unintended flips on release
@@ -57,22 +58,24 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private double p2LeftBumperToDouble;
     private double p2RightBumperToDouble;
     private final double triggerSense = 0.4;
+
     // Target flywheel speed in RPM (96 rpm ≈ 1.6 rps)
-    private double flywheelSpeed= 96;
+    private double flywheelSpeed = 96;
     private boolean launching = false;
-    
-    // Default values, wantedPattern is the pattern for the next 3 balls, indexerPattern is what is in the indexer
-    // possible values for indexerPattern=empty, purple, green, unknown(there is a ball, we don't know what color)
+
+    // Default values
+    // wantedPattern is the pattern for the next 3 balls
+    // indexerPattern is what is in the indexer
+    // possible values for indexerPattern: empty, purple, green, unknown
     private String[] wantedPattern = {"purple", "green", "purple"};
     private String[] indexerPattern = {"empty", "empty", "empty"};
     private boolean checkingPattern = false;
     private boolean autoLaunching = false;
 
-
     @Override
-    public void init() 
-    {
+    public void init() {
         HardwareMap hw = hardwareMap;
+
         // Use Pedro Pathing Follower for teleop drive
         drive = new PedroDrive(hw);
         intake = new IntakeSubsystem(hw, INTAKE, INTAKE_ANGLE, RAMP);
@@ -81,6 +84,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
         turret = new TurretSubsystem(hw, TURRET, TURRET_ANGLE, telemetry, flywheel);
         launch = new LaunchSubsystem(indexer);
         pattern = new CheckPatternSubsystem(hw, indexer, COLOR_SENSOR);
+
         // Enable dashboard configurables for indexer presets
         try { PanelsConfigurables.INSTANCE.refreshClass(indexer); } catch (Exception ignore) {}
     }
@@ -106,192 +110,150 @@ public class TeleOpMainPedroTemplate extends OpMode {
         else
             p2RightBumperToDouble = 0.0;
 
-
         override = gamepad2.left_trigger > triggerSense;
 
-        
-        // Read drive inputs (FTC sticks: up is -y)
-        double y = -gamepad1.left_stick_y;  // forward
-        double x = gamepad1.left_stick_x;   // strafe
-        double rx = gamepad1.right_stick_x; // rotation
+        // Drive inputs (FTC sticks: up is -y)
+        double y  = -gamepad1.left_stick_y;   // forward
+        double x  =  gamepad1.left_stick_x;   // strafe
+        double rx =  gamepad1.right_stick_x;  // rotation
 
         drive.setDriverInput(x, y, rx, true);
         drive.update();
-        
-        // intaking
+
+        // Intaking
         intake.setTriggers(p1LeftBumperToDouble, gamepad1.left_trigger);
-        if (!intakeHold)
-        {
-            if (gamepad1.right_trigger > triggerSense)
-            {
+        if (!intakeHold) {
+            if (gamepad1.right_trigger > triggerSense) {
                 intake.setRotationInput(-0.5);
-            }
-            else if (gamepad1.right_bumper)
-            {
+            } else if (gamepad1.right_bumper) {
                 intake.setRotationInput(0.5);
             }
         }
 
-
-        // set indexer positions
-        if (!(checkingPattern || autoLaunching))
-        {
-            if (gamepad1.dpad_left && !"P1Left".equals(prevIndex))
-            {
+        // ----------------------------
+        // Manual Indexer Presets (disabled during auto functions)
+        // ----------------------------
+        if (!(checkingPattern || autoLaunching)) {
+            if (gamepad1.dpad_left && !"P1Left".equals(prevIndex)) {
                 indexer.setIndexerPosition("Intake1");
                 intakeHold = true;
                 intake.setHoldUp(true);
-            }
-            else if (gamepad1.dpad_down && !"P1Down".equals(prevIndex))
-            {
-                indexer.setIndexerPosition("Intake2"); 
+            } else if (gamepad1.dpad_down && !"P1Down".equals(prevIndex)) {
+                indexer.setIndexerPosition("Intake2");
                 intakeHold = true;
                 intake.setHoldUp(true);
-            }
-            else if (gamepad1.dpad_right && !"P1Right".equals(prevIndex))
-            {
+            } else if (gamepad1.dpad_right && !"P1Right".equals(prevIndex)) {
                 indexer.setIndexerPosition("Intake3");
                 intakeHold = true;
                 intake.setHoldUp(true);
-            }
-            else if (gamepad2.dpad_left && !"P2Left".equals(prevIndex))
-            {
+            } else if (gamepad2.dpad_left && !"P2Left".equals(prevIndex)) {
                 indexer.setIndexerPosition("Launch1");
                 intakeHold = true;
                 intake.setHoldUp(true);
-            }
-            else if (gamepad2.dpad_down && !"P2Down".equals(prevIndex))
-            {
+            } else if (gamepad2.dpad_down && !"P2Down".equals(prevIndex)) {
                 indexer.setIndexerPosition("Launch2");
                 intakeHold = true;
                 intake.setHoldUp(true);
-            }
-            else if (gamepad2.dpad_right && !"P2Right".equals(prevIndex))
-            {                
+            } else if (gamepad2.dpad_right && !"P2Right".equals(prevIndex)) {
                 indexer.setIndexerPosition("Launch3");
                 intakeHold = true;
                 intake.setHoldUp(true);
             }
 
-            // pulse launch arm
+            // Pulse launch arm (only when not in auto modes)
             indexer.handleLeverButton(gamepad2.dpad_up);
-        }
-        else 
-        {
-            // if we are doing auto functions, don't pulse lever arm
+        } else {
+            // If we are doing auto functions, don't pulse lever arm
             indexer.handleLeverButton(false);
         }
-        // Override button
-        if (override)
-        {
-            // ramp control: up/down only
-            if (gamepad2.left_bumper || gamepad1.left_bumper || gamepad1.left_trigger > triggerSense)
-            {
-                // lower ramp (down)
+
+        // ----------------------------
+        // Override / Auto logic
+        // ----------------------------
+        if (override) {
+            // Ramp control: up/down only
+            if (gamepad2.left_bumper || gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) {
                 intake.setRampDown();
-            }
-            else
-            {
-                // raise ramp (up)
+            } else {
                 intake.setRampUp();
             }
-            // TODO: once turret is wrriten, do manual turret/hood controls and manual flywheel speed
-            // variables: pad2LeftStickY=hoodInput, pad2RightStickX=turretInput, pad2RightBumper=close launch, pad2RightTrigger=far launch
-            // In override, hold a constant speed around 1.6 rps
-            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense)
-            {
+
+            // Override flywheel controls (placeholder)
+            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense) {
                 flywheelSpeed = 96; // 96 rpm
-            }
-            else {
+            } else {
                 flywheelSpeed = 0;
             }
-            turret.updateManual(gamepad2.right_stick_x,gamepad2.left_stick_y, flywheelSpeed);
-        }
-        else
-        {
-            // auto ramp control: up/down only
-            if ((gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) && !intakeHold)
-            {
-                // lower ramp (down)
+
+            turret.updateManual(gamepad2.right_stick_x, gamepad2.left_stick_y, flywheelSpeed);
+
+        } else {
+            // Auto ramp control
+            if ((gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) && !intakeHold) {
                 intake.setRampDown();
-            }
-            else
-            {
-                // raise ramp (up)
+            } else {
                 intake.setRampUp();
             }
-            // TODO: once turret is written, call auto update with flywheel launch
-            // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense=launch
-            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense)
-            {
-                telemetry.addLine("Test 2");
+
+            // Auto turret launch request
+            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense) {
                 launching = true;
-            }
-            else
-            {
-                telemetry.addLine("test");
+            } else {
                 launching = false;
             }
             turret.updateAutoTurret(launching);
         }
 
-        // launch sequence
-        if (gamepad2.y && !checkingPattern)
-        {
-            if (override && gamepad2.right_trigger > triggerSense && autoLaunching)
-            {
+        // ----------------------------
+        // Launch sequence (Y)
+        // ----------------------------
+        if (gamepad2.y && !checkingPattern) {
+            if (override && gamepad2.right_trigger > triggerSense && autoLaunching) {
                 launch.stopLaunch();
-            }
-            else if (!autoLaunching)
-            {
+            } else if (!autoLaunching) {
                 launch.startLaunch(wantedPattern, indexerPattern);
             }
         }
-        // pattern sequence
-        else if ((gamepad2.x || gamepad2.a || gamepad2.b) && !autoLaunching)
-        {
-            if (override && gamepad2.right_trigger > triggerSense && checkingPattern)
-            {
+        // ----------------------------
+        // Pattern scan sequence (X/A/B)
+        // ----------------------------
+        else if ((gamepad2.x || gamepad2.a || gamepad2.b) && !autoLaunching) {
+            if (override && gamepad2.right_trigger > triggerSense && checkingPattern) {
                 pattern.stop();
-            }
-            else if (!checkingPattern)
-            {
+            } else if (!checkingPattern) {
                 pattern.start();
             }
         }
 
-        // set wanted pattern
-        if (gamepad2.x)
-        {
+        // Set wanted pattern
+        if (gamepad2.x) {
             wantedPattern = new String[]{"green", "purple", "purple"};
-        }
-        else if (gamepad2.a)
-        {
+        } else if (gamepad2.a) {
             wantedPattern = new String[]{"purple", "green", "purple"};
-        }
-        else if (gamepad2.b)
-        {
+        } else if (gamepad2.b) {
             wantedPattern = new String[]{"purple", "purple", "green"};
         }
 
-        // Maintain lever timing and magnet
-        indexer.update();
+        // ----------------------------
+        // Subsystem updates
+        // ----------------------------
+        indexer.update();   // magnet update should be disabled inside IndexerSubsystem for now
         launch.update();
         pattern.update();
 
-        // update indexer pattern if launching(removing balls) or checking pattern
-        if (autoLaunching)
-        {
+        // IMPORTANT: Update status booleans AFTER subsystem updates
+        autoLaunching = launch.getStatus();
+        checkingPattern = pattern.getStatus();
+
+        // IMPORTANT: Update indexerPattern AFTER status booleans are refreshed
+        if (autoLaunching) {
             indexerPattern = launch.getIndexerPattern();
-        }
-        else if (checkingPattern)
-        {
+        } else if (checkingPattern) {
             indexerPattern = pattern.getIndexerPattern();
         }
 
         // Normal auto-release of intake hold when indexer finishes
-        if (!indexer.isMoving()) 
-        {
+        if (!indexer.isMoving()) {
             intakeHold = false;
             intake.setHoldUp(false);
         }
@@ -309,19 +271,17 @@ public class TeleOpMainPedroTemplate extends OpMode {
             prevIndex = "P2Down";
         else if (gamepad2.dpad_right)
             prevIndex = "P2Right";
-
-        // update bools for launching/checking pattern
-        autoLaunching = launch.getStatus();
-        checkingPattern = pattern.getStatus();
+        else
+            prevIndex = ""; // allow re-press once released
 
         // Telemetry
-        telemetry.addData("currentColor", pattern.getHsv()[0]);
+        telemetry.addData("currentHue", pattern.getHsv()[0]);
         telemetry.addData("overrideState", override);
         telemetry.addData("magnetState", indexer.getMagnetState());
         telemetry.addData("indexerPosition", indexer.getCurrentPosition());
         telemetry.addData("wantedPattern", printStringArray(wantedPattern));
         telemetry.addData("currentPattern", printStringArray(indexerPattern));
-        telemetry.addData("launching", autoLaunching);
+        telemetry.addData("launching(auto)", autoLaunching);
         telemetry.addData("checkingPattern", checkingPattern);
         telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
         telemetry.addData("Turret", turret.getStatus());
@@ -329,18 +289,16 @@ public class TeleOpMainPedroTemplate extends OpMode {
         telemetry.addData("IntakeHold", intakeHold);
         telemetry.addData("IntakeHoldUp", intake.isHoldUp());
         telemetry.addData("Indexer", indexer.getStatus());
-        // telemetry.addData("Buffer", String.format("head=%d slots=[%s,%s,%s]", head, slots[0], slots[1], slots[2]));
         telemetry.addData("Flywheel", flywheel.getStatus());
         telemetry.update();
     }
 
     // lets us output an array
-    public String printStringArray(String[] arr)
-    {
+    public String printStringArray(String[] arr) {
         String printThis = "[";
-        for (int i=0; i<arr.length; i++)
-        {
-            printThis += arr[i] + ", ";
+        for (int i = 0; i < arr.length; i++) {
+            printThis += arr[i];
+            if (i < arr.length - 1) printThis += ", ";
         }
         printThis += "]";
         return printThis;

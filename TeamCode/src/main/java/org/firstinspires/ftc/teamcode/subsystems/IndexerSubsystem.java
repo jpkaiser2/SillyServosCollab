@@ -12,30 +12,28 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Configurable
 public class IndexerSubsystem {
-    
+
     @IgnoreConfigurable
     private final DcMotorEx indexerMotor; // motor with encoder controlling indexer
     @IgnoreConfigurable
-    private final Servo feedLeverServo; // lever that feeds balls into intake
+    private final Servo feedLeverServo;   // lever that feeds balls into intake
     @IgnoreConfigurable
     private final TouchSensor magnetSensor;
-    // Manual mode removed
 
-    // Magnet sensor logic
+    // ----------------------------
+    // Magnet sensor logic (DISABLED UNTIL CALIBRATED)
+    // ----------------------------
 
     // switch to true if we start the robot with the magnet
     private static boolean previousMagnetState = false;
-    // current encoder value needs to be +- this amount to expected to regester the
-    // magnet, approx value
+    // current encoder value needs to be +- this amount to expected to register the magnet
     public static final int approxEncoderAccuracy = 20;
     public static int magnetBasedOffset = 0;
 
-    // default value in case we start on the magnet, may be slightly inaccurate, but
-    // should fix itself after 1 rotation
+    // default value in case we start on the magnet
     public static int magnetRisingEdgePosition = 0;
 
-    // magnet positions in encoder ticks(note: define this position as the encoder
-    // tick when the magnet is centered)
+    // magnet positions in encoder ticks
     // !!Warning!! these are guessed values, need to update before using
     public static int magnetPosition1 = 77;
     public static int magnetPosition2 = 175;
@@ -50,7 +48,10 @@ public class IndexerSubsystem {
     public static int INTAKE_2 = 48;
     public static int INTAKE_3 = 243;
 
+    // ----------------------------
     // Lever pulse config
+    // ----------------------------
+
     @IgnoreConfigurable
     private final ElapsedTime leverTimer = new ElapsedTime();
     @IgnoreConfigurable
@@ -81,16 +82,20 @@ public class IndexerSubsystem {
         previousMagnetState = magnetSensor.isPressed();
     }
 
+    /**
+     * Magnet calibration logic (DISABLED UNTIL CALIBRATED).
+     * Leave this code here, but do not call it from update().
+     */
     public void updateMagnet() {
+        // HOMING MAGNET DISABLED UNTIL CALIBRATED
+        /*
         // rising edge
-        // commented out for testing(it should be working tho)
-
         if (!previousMagnetState && magnetSensor.isPressed()) {
             // at magnet 1 or 2
             if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
                     && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy)
                     || (indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy)
-                            && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy)) {
+                    && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy)) {
                 magnetRisingEdgePosition = indexerMotor.getCurrentPosition();
             }
         }
@@ -100,10 +105,9 @@ public class IndexerSubsystem {
             // at magnet 1
             if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
                     && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy)) {
-                // calculate average to find encoder position of the magnet, not the
-                // rising/falling edge of it
                 int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
                 magnetBasedOffset = magnetPosition1 - average;
+
                 LAUNCH_1 += magnetBasedOffset;
                 LAUNCH_2 += magnetBasedOffset;
                 LAUNCH_3 += magnetBasedOffset;
@@ -117,10 +121,9 @@ public class IndexerSubsystem {
             // at magnet 2
             else if ((indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy)
                     && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy)) {
-                // calculate average to find encoder position of the magnet, not the
-                // rising/falling edge of it
                 int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
                 magnetBasedOffset = magnetPosition2 - average;
+
                 LAUNCH_1 += magnetBasedOffset;
                 LAUNCH_2 += magnetBasedOffset;
                 LAUNCH_3 += magnetBasedOffset;
@@ -131,9 +134,9 @@ public class IndexerSubsystem {
                 magnetPosition2 += magnetBasedOffset;
             }
         }
-        // update previous state for falling/rising edge
-        previousMagnetState = magnetSensor.isPressed();
 
+        previousMagnetState = magnetSensor.isPressed();
+        */
     }
 
     public void setLeverConfig(long pulseMs, double idle, double engaged) {
@@ -152,11 +155,9 @@ public class IndexerSubsystem {
         }
     }
 
-    public void setIndexerPosition(String inputPosition)
-    {
+    public void setIndexerPosition(String inputPosition) {
         int target;
-        switch (inputPosition)
-        {
+        switch (inputPosition) {
             case "Launch1":
                 target = LAUNCH_1;
                 break;
@@ -176,23 +177,23 @@ public class IndexerSubsystem {
                 target = INTAKE_3;
                 break;
             default:
-                // Unknown label; do nothing
-                return;
+                return; // Unknown label; do nothing
         }
 
         indexerMotor.setTargetPosition(target);
         indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         indexerMotor.setPower(0.3);
     }
-    // Manual mode APIs removed
 
-    /** Call once per loop to maintain lever pulse timing. */
+    /** Call once per loop to maintain lever pulse timing. Magnet logic is disabled for now. */
     public void update() {
         updateLever();
-        updateMagnet();
+
+        // HOMING MAGNET DISABLED UNTIL CALIBRATED
+        // updateMagnet();
     }
 
-    /** Trigger feed lever pulse on button press (e.g., gamepad2.y). */
+    /** Trigger feed lever pulse on button press (e.g., gamepad2.dpad_up). */
     public void handleLeverButton(boolean pressed) {
         if (pressed && !leverPulsing) {
             leverPulsing = true;
@@ -211,8 +212,14 @@ public class IndexerSubsystem {
 
     public String getStatus() {
         boolean busy = indexerMotor.getMode() == DcMotor.RunMode.RUN_TO_POSITION && indexerMotor.isBusy();
-        return String.format("mode=%s busy=%s cur=%d tgt=%d leverPulsing=%s",
-                indexerMotor.getMode(), busy, indexerMotor.getCurrentPosition(), indexerMotor.getTargetPosition(), leverPulsing);
+        return String.format(
+                "mode=%s busy=%s cur=%d tgt=%d leverPulsing=%s",
+                indexerMotor.getMode(),
+                busy,
+                indexerMotor.getCurrentPosition(),
+                indexerMotor.getTargetPosition(),
+                leverPulsing
+        );
     }
 
     /** Whether the indexer is currently moving toward a target position. */
@@ -230,8 +237,7 @@ public class IndexerSubsystem {
         return indexerMotor.getTargetPosition();
     }
 
-    public boolean getLeverState()
-    {
+    public boolean getLeverState() {
         return leverPulsing;
     }
 
@@ -243,20 +249,21 @@ public class IndexerSubsystem {
         } else {
             base = indexerMotor.getCurrentPosition();
         }
+
         int target = base + deltaTicks;
+
         indexerMotor.setTargetPosition(target);
+
         try {
             indexerMotor.setTargetPositionTolerance(1);
-        } catch (Exception ignore) {
-        }
+        } catch (Exception ignore) {}
+
         indexerMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         indexerMotor.setPower(0.3);
     }
 
     // Tuning helpers
-    public boolean getMagnetState()
-    {
+    public boolean getMagnetState() {
         return previousMagnetState;
     }
-
 }
