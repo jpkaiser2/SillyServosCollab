@@ -50,6 +50,9 @@ public class IndexerSubsystem {
     public static int INTAKE_2 = 48;
     public static int INTAKE_3 = 243;
 
+    // saved target string
+    public String targetString = "Launch1"; // the default position
+
     // Lever pulse config
     @IgnoreConfigurable
     private final ElapsedTime leverTimer = new ElapsedTime();
@@ -154,30 +157,40 @@ public class IndexerSubsystem {
 
     public void setIndexerPosition(String inputPosition)
     {
+        if (inputPosition.equals(targetString))
+        {
+            return; // early exit and do nothing if we are already there
+        }
         int target;
         switch (inputPosition)
         {
             case "Launch1":
                 target = LAUNCH_1;
+                targetString = "Launch1";
                 break;
             case "Launch2":
                 target = LAUNCH_2;
+                targetString = "Launch2";
                 break;
             case "Launch3":
                 target = LAUNCH_3;
+                targetString = "Launch3";
                 break;
             case "Intake1":
                 target = INTAKE_1;
+                targetString = "Intake1";
                 break;
             case "Intake2":
                 target = INTAKE_2;
+                targetString = "Intake2";
                 break;
             case "Intake3":
                 target = INTAKE_3;
+                targetString = "Intake3";
                 break;
             default:
                 // Unknown label; do nothing
-                return;
+                break;
         }
 
         indexerMotor.setTargetPosition(target);
@@ -259,4 +272,8 @@ public class IndexerSubsystem {
         return previousMagnetState;
     }
 
+    public String getTargetString()
+    {
+        return targetString;
+    }
 }

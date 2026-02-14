@@ -43,7 +43,6 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private CheckPatternSubsystem pattern;
     // Indexer preset control
     
-    private String prevIndex = "";
     private boolean intakeHold = false;
     private boolean override = false;
     private ElapsedTime overrideTime = new ElapsedTime();
@@ -134,39 +133,39 @@ public class TeleOpMainPedroTemplate extends OpMode {
 
 
         // set indexer positions
-        if (!(checkingPattern || autoLaunching))
+        if (!(checkingPattern || autoLaunching || indexer.isMoving()))
         {
-            if (gamepad1.dpad_left && !"P1Left".equals(prevIndex))
+            if (gamepad1.dpad_left)
             {
                 indexer.setIndexerPosition("Intake1");
                 intakeHold = true;
                 intake.setHoldUp(true);
             }
-            else if (gamepad1.dpad_down && !"P1Down".equals(prevIndex))
+            else if (gamepad1.dpad_down)
             {
                 indexer.setIndexerPosition("Intake2"); 
                 intakeHold = true;
                 intake.setHoldUp(true);
             }
-            else if (gamepad1.dpad_right && !"P1Right".equals(prevIndex))
+            else if (gamepad1.dpad_right)
             {
                 indexer.setIndexerPosition("Intake3");
                 intakeHold = true;
                 intake.setHoldUp(true);
             }
-            else if (gamepad2.dpad_left && !"P2Left".equals(prevIndex))
+            else if (gamepad2.dpad_left)
             {
                 indexer.setIndexerPosition("Launch1");
                 intakeHold = true;
                 intake.setHoldUp(true);
             }
-            else if (gamepad2.dpad_down && !"P2Down".equals(prevIndex))
+            else if (gamepad2.dpad_down)
             {
                 indexer.setIndexerPosition("Launch2");
                 intakeHold = true;
                 intake.setHoldUp(true);
             }
-            else if (gamepad2.dpad_right && !"P2Right".equals(prevIndex))
+            else if (gamepad2.dpad_right)
             {                
                 indexer.setIndexerPosition("Launch3");
                 intakeHold = true;
@@ -283,10 +282,16 @@ public class TeleOpMainPedroTemplate extends OpMode {
         if (autoLaunching)
         {
             indexerPattern = launch.getIndexerPattern();
+            intakeHold = true;
         }
         else if (checkingPattern)
         {
             indexerPattern = pattern.getIndexerPattern();
+            intakeHold = true;
+        }
+        else
+        {
+            intakeHold = false;
         }
 
         // Normal auto-release of intake hold when indexer finishes
@@ -296,19 +301,6 @@ public class TeleOpMainPedroTemplate extends OpMode {
             intake.setHoldUp(false);
         }
 
-        // define previous indexer input (clear when no dpad is pressed to allow repeat presses)
-        if (gamepad1.dpad_left)
-            prevIndex = "P1Left";
-        else if (gamepad1.dpad_down)
-            prevIndex = "P1Down";
-        else if (gamepad1.dpad_right)
-            prevIndex = "P1Right";
-        else if (gamepad2.dpad_left)
-            prevIndex = "P2Left";
-        else if (gamepad2.dpad_down)
-            prevIndex = "P2Down";
-        else if (gamepad2.dpad_right)
-            prevIndex = "P2Right";
 
         // update bools for launching/checking pattern
         autoLaunching = launch.getStatus();
