@@ -101,7 +101,12 @@ public class CheckPatternSubsystem {
             }
 
             case SETTLE: {
-                long requiredSettle = (blackRetry > 0) ? nudgeSettleMs : settleMs;
+                long requiredSettle;
+                if (blackRetry > 0) {
+                    requiredSettle = nudgeSettleMs;
+                } else {
+                    requiredSettle = settleMs;
+                }
                 if (!indexer.isMoving() && timer.milliseconds() >= requiredSettle) {
                     beginSampling();
                     state = State.SAMPLE;
@@ -138,7 +143,12 @@ public class CheckPatternSubsystem {
 
             case BLACK_NUDGE: {
                 // alternate direction each retry
-                int dir = (blackRetry % 2 == 1) ? +1 : -1;
+                int dir;
+                if (blackRetry % 2 == 1) {
+                    dir = +1;
+                } else {
+                    dir = -1;
+                }
                 indexer.nudgeTicks(dir * nudgeTicks);
                 state = State.SETTLE;
                 timer.reset();
