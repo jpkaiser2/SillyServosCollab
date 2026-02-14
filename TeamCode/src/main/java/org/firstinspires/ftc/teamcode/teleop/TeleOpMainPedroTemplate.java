@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.subsystems.CheckPatternSubsystem;
 @TeleOp(name = "TeleOpMainPedro", group = "TeleOp")
 public class TeleOpMainPedroTemplate extends OpMode {
 
-    // HardwareMap names (edit these to match your configuration)
+    // HardwareMap names (edit these to match your configuration).
     private static final String FRONT_LEFT = "frontLeft";
     private static final String FRONT_RIGHT = "frontRight";
     private static final String BACK_LEFT = "backLeft";
