@@ -86,27 +86,13 @@ public class IndexerSubsystem {
 
     public void updateMagnet() {
         // rising edge
-        // commented out for testing(it should be working tho)
-
         if (!previousMagnetState && magnetSensor.isPressed()) {
-            // at magnet 1 or 2
-            if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
-                    && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy)
-                    || (indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy)
-                            && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy)) {
-                magnetRisingEdgePosition = indexerMotor.getCurrentPosition();
-            }
-        }
-
-        // falling edge
-        else if (previousMagnetState && !magnetSensor.isPressed()) {
             // at magnet 1
             if ((indexerMotor.getCurrentPosition() > magnetPosition1 - approxEncoderAccuracy)
                     && (indexerMotor.getCurrentPosition() < magnetPosition1 + approxEncoderAccuracy)) {
-                // calculate average to find encoder position of the magnet, not the
-                // rising/falling edge of it
-                int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
-                magnetBasedOffset = magnetPosition1 - average;
+                // adjust positions based on rising edge position
+                magnetRisingEdgePosition = indexerMotor.getCurrentPosition();
+                magnetBasedOffset = magnetPosition1 - magnetRisingEdgePosition;
                 LAUNCH_1 += magnetBasedOffset;
                 LAUNCH_2 += magnetBasedOffset;
                 LAUNCH_3 += magnetBasedOffset;
@@ -120,10 +106,9 @@ public class IndexerSubsystem {
             // at magnet 2
             else if ((indexerMotor.getCurrentPosition() > magnetPosition2 - approxEncoderAccuracy)
                     && (indexerMotor.getCurrentPosition() < magnetPosition2 + approxEncoderAccuracy)) {
-                // calculate average to find encoder position of the magnet, not the
-                // rising/falling edge of it
-                int average = (int) ((magnetRisingEdgePosition + indexerMotor.getCurrentPosition()) / 2.0);
-                magnetBasedOffset = magnetPosition2 - average;
+                // adjust positions based on rising edge position
+                magnetRisingEdgePosition = indexerMotor.getCurrentPosition();
+                magnetBasedOffset = magnetPosition2 - magnetRisingEdgePosition;
                 LAUNCH_1 += magnetBasedOffset;
                 LAUNCH_2 += magnetBasedOffset;
                 LAUNCH_3 += magnetBasedOffset;
