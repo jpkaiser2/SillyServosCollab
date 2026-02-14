@@ -130,6 +130,23 @@ public class TeleOpMainPedroTemplate extends OpMode {
             }
         }
 
+// ----------------------------
+// MANUAL INDEXER TUNING MODE
+// ----------------------------
+
+// Hold gamepad2 left bumper to manually rotate
+        if (gamepad2.left_stick_y > 0) {
+            indexer.setManualPower(0.2);   // slow forward
+        }
+// Hold gamepad2 right bumper to rotate backwards
+        else if (gamepad2.left_stick_x < 0) {
+            indexer.setManualPower(-0.2);  // slow backward
+        }
+        else {
+            indexer.stopManual();
+        }
+
+
         // ----------------------------
         // Manual Indexer Presets (disabled during auto functions)
         // ----------------------------
@@ -275,7 +292,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
             prevIndex = ""; // allow re-press once released
 
         // Telemetry
-        telemetry.addData("currentHue", pattern.getHsv()[0]);
+       /* telemetry.addData("currentHue", pattern.getHsv()[0]);
         telemetry.addData("overrideState", override);
         telemetry.addData("magnetState", indexer.getMagnetState());
         telemetry.addData("indexerPosition", indexer.getCurrentPosition());
@@ -290,7 +307,15 @@ public class TeleOpMainPedroTemplate extends OpMode {
         telemetry.addData("IntakeHoldUp", intake.isHoldUp());
         telemetry.addData("Indexer", indexer.getStatus());
         telemetry.addData("Flywheel", flywheel.getStatus());
-        telemetry.update();
+        telemetry.update();*/
+        telemetry.addData("indexerPosition", indexer.getCurrentPosition());
+        telemetry.addData("MagPressed", indexer.getMagnetState());
+        telemetry.addData("RawPhase", IndexerSubsystem.dbgRawPhase);
+        telemetry.addData("VirtualPhase", IndexerSubsystem.dbgVirtualPhase);
+        telemetry.addData("Offset", IndexerSubsystem.phaseOffsetTicks);
+        telemetry.addData("LastMag", IndexerSubsystem.dbgLastMagnetName);
+        telemetry.addData("LastSnap", IndexerSubsystem.dbgLastSnapError);
+
     }
 
     // lets us output an array
