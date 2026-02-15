@@ -189,14 +189,19 @@ public class TeleOpMainPedroTemplate extends OpMode {
                 // raise ramp (up)
                 intake.setRampUp();
             }
-            // TODO: once turret is wrriten, do manual turret/hood controls and manual flywheel speed
-            // variables: pad2LeftStickY=hoodInput, pad2RightStickX=turretInput, pad2RightBumper=close launch, pad2RightTrigger=far launch
             // In override, hold a constant speed around 1.6 rps
-            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense)
+            if (gamepad2.right_bumper)
             {
-                flywheelSpeed = 96; // 96 rpm
+                // close
+                flywheelSpeed = 500; 
             }
-            else {
+            else if (gamepad2.right_trigger > triggerSense)
+            {
+                // far
+                flywheelSpeed = 1000;
+            }
+            else 
+            {
                 flywheelSpeed = 0;
             }
             turret.updateManual(gamepad2.right_stick_x,gamepad2.left_stick_y, flywheelSpeed);
@@ -214,16 +219,12 @@ public class TeleOpMainPedroTemplate extends OpMode {
                 // raise ramp (up)
                 intake.setRampUp();
             }
-            // TODO: once turret is written, call auto update with flywheel launch
-            // variables: gamepad2.right_bumper || gamepad2.right_trigger > triggerSense=launch
             if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense)
             {
-                telemetry.addLine("Test 2");
                 launching = true;
             }
             else
             {
-                telemetry.addLine("test");
                 launching = false;
             }
             turret.updateAutoTurret(launching);

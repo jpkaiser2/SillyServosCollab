@@ -9,6 +9,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 public class FlywheelSubsystem {
     private final DcMotorEx flywheel;
     private static final double DEFAULT_RPS = 1.6; // target constant speed
+
+    private static final double flywheelConversionFixFactor = 1.0/1000;
+
     public FlywheelSubsystem(HardwareMap hardwareMap, String flywheelName) {
         this.flywheel = hardwareMap.get(DcMotorEx.class, flywheelName);
         // Flywheel typically allowed to coast
@@ -35,7 +38,8 @@ public class FlywheelSubsystem {
     }
     public void setVelocity(double angularVelocity) {
         //in rot/second
-        flywheel.setVelocity(angularVelocity*360,AngleUnit.DEGREES);
+        double actualVelocity = angularVelocity * flywheelConversionFixFactor;
+        flywheel.setVelocity(actualVelocity*360,AngleUnit.DEGREES);
     }
     public void holdConstantSpeed() {
         setVelocity(DEFAULT_RPS);

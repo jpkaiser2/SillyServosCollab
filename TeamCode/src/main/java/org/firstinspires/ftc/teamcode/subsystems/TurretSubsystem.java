@@ -146,6 +146,7 @@ public class TurretSubsystem {
 
 
    // ---- Update ----
+   // flywheel speed in rpm
    public void updateManual(double rightStickX,double leftStickY, double flywheelSpeed) {
        // Optional soft limit clamp: prevent driving further into limits
 
