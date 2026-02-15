@@ -175,11 +175,6 @@ public class TeleOpMainPedroTemplate extends OpMode {
             // pulse launch arm
             indexer.handleLeverButton(gamepad2.dpad_up);
         }
-        else 
-        {
-            // if we are doing auto functions, don't pulse lever arm
-            indexer.handleLeverButton(false);
-        }
         // Override button
         if (override)
         {
@@ -307,9 +302,11 @@ public class TeleOpMainPedroTemplate extends OpMode {
         checkingPattern = pattern.getStatus();
 
         // Telemetry
-        telemetry.addData("currentColor", pattern.getHsv()[0]);
+        telemetry.addData("currentColorHSV", printDoubleArray(pattern.getHsv()));
         telemetry.addData("overrideState", override);
         telemetry.addData("magnetState", indexer.getMagnetState());
+        telemetry.addData("magnetOffset", indexer.magnetBasedOffset);
+        telemetry.addData("LeverState", indexer.getLeverState());
         telemetry.addData("indexerPosition", indexer.getCurrentPosition());
         telemetry.addData("wantedPattern", printStringArray(wantedPattern));
         telemetry.addData("currentPattern", printStringArray(indexerPattern));
@@ -321,13 +318,27 @@ public class TeleOpMainPedroTemplate extends OpMode {
         telemetry.addData("IntakeHold", intakeHold);
         telemetry.addData("IntakeHoldUp", intake.isHoldUp());
         telemetry.addData("Indexer", indexer.getStatus());
-        // telemetry.addData("Buffer", String.format("head=%d slots=[%s,%s,%s]", head, slots[0], slots[1], slots[2]));
         telemetry.addData("Flywheel", flywheel.getStatus());
+        telemetry.addData("DistanceToAprilTag", turret.getCamera().getTargetTurretDistance());
+        telemetry.addData("BearingToAprilTag", turret.getCamera().getTargetTurretBearing());
+        telemetry.addData("Calculated flywheel speed", turret.physicsFlywheelSpeedRPS);
+        telemetry.addData("Calculated hood angle", turret.physicsHoodAngle);
         telemetry.update();
     }
 
     // lets us output an array
     public String printStringArray(String[] arr)
+    {
+        String printThis = "[";
+        for (int i=0; i<arr.length; i++)
+        {
+            printThis += arr[i] + ", ";
+        }
+        printThis += "]";
+        return printThis;
+    }
+
+    public String printDoubleArray(double[] arr)
     {
         String printThis = "[";
         for (int i=0; i<arr.length; i++)

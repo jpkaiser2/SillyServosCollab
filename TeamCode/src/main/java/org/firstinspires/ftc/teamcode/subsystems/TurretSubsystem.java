@@ -43,6 +43,10 @@ public class TurretSubsystem {
    private double minDeg = -180.0;
    private double maxDeg = 180.0;
 
+   // variables for telemetry
+   public double physicsFlywheelSpeedRPS = 0.0;
+   public double physicsHoodAngle = 0.0;
+
 
    public TurretSubsystem(HardwareMap hardwareMap, String turretMotorName, String turretAngleServoName, Telemetry telemetry, FlywheelSubsystem flywheel) {
        this.turretMotor = hardwareMap.get(DcMotorEx.class, turretMotorName);
@@ -216,6 +220,7 @@ public class TurretSubsystem {
         double hoodLoweredAngle = 31.7;
         double deltaY = heightOfGoal+clearance-launcherHeight; 
         double angle = (Math.atan(2*deltaY/distance)*(180/Math.PI));
+        physicsHoodAngle = angle;
         angle -= hoodLoweredAngle;
         double hoodGearRatio = 75.0/20.0; 
         angle *= hoodGearRatio;
@@ -224,6 +229,7 @@ public class TurretSubsystem {
         double wheelCircumference = 0.3015;
         double flywheelAngularVelocity = ((ballVelocity/launcherEfficiency)/wheelCircumference);
         //flywheel Angular Velocity =((ball speed(m/s)/efficiency)/wheel circumfrence(m))
+        physicsFlywheelSpeedRPS = flywheelAngularVelocity;
         flywheel.setVelocity(flywheelAngularVelocity);
         //rightLauncherServo.setPosition(angle/300);//300 degree servo range of motion
         //leftLauncherServo.setPosition(1-(angle/300));
