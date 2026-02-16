@@ -92,10 +92,10 @@ public class TeleOpMainPedroTemplate extends OpMode {
     @Override
     public void loop() {
         // Convert bumpers to doubles
-        if (gamepad1.left_bumper)  p1LeftBumperToDouble = 1.0;  else p1LeftBumperToDouble = 0.0;
-        if (gamepad1.right_bumper) p1RightBumperToDouble = 1.0; else p1RightBumperToDouble = 0.0;
-        if (gamepad2.left_bumper)  p2LeftBumperToDouble = 1.0;  else p2LeftBumperToDouble = 0.0;
-        if (gamepad2.right_bumper) p2RightBumperToDouble = 1.0; else p2RightBumperToDouble = 0.0;
+        p1LeftBumperToDouble  = gamepad1.left_bumper  ? 1.0 : 0.0;
+        p1RightBumperToDouble = gamepad1.right_bumper ? 1.0 : 0.0;
+        p2LeftBumperToDouble  = gamepad2.left_bumper  ? 1.0 : 0.0;
+        p2RightBumperToDouble = gamepad2.right_bumper ? 1.0 : 0.0;
 
         override = gamepad2.left_trigger > triggerSense;
 
@@ -118,13 +118,12 @@ public class TeleOpMainPedroTemplate extends OpMode {
             }
         }
 
-        // ============================
-        // INDEXER MANUAL TUNING MODE
-        // ============================
+        // ==========================================================
+        // INDEXER MANUAL TUNING MODE (TOGGLE + HOLD-TO-SPIN)
+        // ==========================================================
         boolean togglePressed = gamepad2.back;
         if (togglePressed && !prevManualToggle) {
-            if (manualIndexerMode) manualIndexerMode = false;
-            else manualIndexerMode = true;
+            manualIndexerMode = !manualIndexerMode;
         }
         prevManualToggle = togglePressed;
 
@@ -139,11 +138,12 @@ public class TeleOpMainPedroTemplate extends OpMode {
                 indexer.stopManual();
             }
 
+            // Optional: still allow lever pulse
             indexer.handleLeverButton(gamepad2.dpad_up);
 
+            // Update indexer so magnet snapping + debug works
             indexer.update();
 
-            // Use getters
             telemetry.addLine("=== INDEXER MANUAL TUNING MODE ===");
             telemetry.addLine("Toggle: gamepad2 BACK");
             telemetry.addLine("Spin: gamepad2 left stick Y");
@@ -155,6 +155,13 @@ public class TeleOpMainPedroTemplate extends OpMode {
             telemetry.addData("LastMag", indexer.getDbgLastMagnetName());
             telemetry.addData("LastSnap", indexer.getDbgLastSnapError());
             telemetry.addData("PhaseErr", indexer.getDbgError());
+
+            // New 3-magnet debug (pulse center capture)
+            telemetry.addData("RiseRaw", indexer.getDbgRiseRaw());
+            telemetry.addData("FallRaw", indexer.getDbgFallRaw());
+            telemetry.addData("CenterRaw", indexer.getDbgCenterRaw());
+            telemetry.addData("LastMagPhase", indexer.getDbgLastMagnetPhase());
+
             telemetry.update();
             return;
         }
@@ -217,9 +224,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
                 intake.setRampUp();
             }
 
-            if (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense) launching = true;
-            else launching = false;
-
+            launching = (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense);
             turret.updateAutoTurret(launching);
         }
 
@@ -294,13 +299,19 @@ public class TeleOpMainPedroTemplate extends OpMode {
         telemetry.addData("Indexer", indexer.getStatus());
         telemetry.addData("Flywheel", flywheel.getStatus());
 
-        // Extra tuning info
+        // Extra tuning info (phase + magnets)
         telemetry.addData("RawPhase", indexer.getDbgRawPhase());
         telemetry.addData("VirtualPhase", indexer.getDbgVirtualPhase());
         telemetry.addData("Offset", indexer.getDbgPhaseOffsetTicks());
         telemetry.addData("LastMag", indexer.getDbgLastMagnetName());
         telemetry.addData("LastSnap", indexer.getDbgLastSnapError());
         telemetry.addData("PhaseErr", indexer.getDbgError());
+
+        // 3-magnet pulse debug
+        telemetry.addData("RiseRaw", indexer.getDbgRiseRaw());
+        telemetry.addData("FallRaw", indexer.getDbgFallRaw());
+        telemetry.addData("CenterRaw", indexer.getDbgCenterRaw());
+        telemetry.addData("LastMagPhase", indexer.getDbgLastMagnetPhase());
 
         telemetry.update();
     }

@@ -16,7 +16,6 @@ public class IndexerSubsystem {
     // ----------------------------
     // Hardware
     // ----------------------------
-
     @IgnoreConfigurable
     private final DcMotorEx indexerMotor;
     @IgnoreConfigurable
@@ -27,7 +26,6 @@ public class IndexerSubsystem {
     // ----------------------------
     // Manual tuning mode (raw power)
     // ----------------------------
-
     @IgnoreConfigurable
     private boolean manualMode = false;
     @IgnoreConfigurable
@@ -37,17 +35,16 @@ public class IndexerSubsystem {
     public void setManualPower(double power) {
         manualMode = true;
         manualPower = clamp(power, -1.0, 1.0);
-        motionState = MotionState.IDLE; // stop phase motion
+        motionState = MotionState.IDLE; // stop closed-loop motion
         indexerMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         indexerMotor.setPower(manualPower);
     }
 
-    /** Stop manual control. */
+    /** Stop manual control (keeps BRAKE). */
     public void stopManual() {
         manualMode = false;
         manualPower = 0.0;
         indexerMotor.setPower(0.0);
-        // Keep RUN_WITHOUT_ENCODER + BRAKE, so it holds reasonably.
         indexerMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
@@ -56,77 +53,80 @@ public class IndexerSubsystem {
     }
 
     // ----------------------------
-    // PHASE / MAGNET HOMING (TUNABLE)
+    // 3-MAGNET ABSOLUTE LAUNCH INDEXING (TUNABLE)
     // ----------------------------
 
-    /** Enable/disable magnet correction live while tuning. */
+    /** Enable/disable magnet correction. Leave ON for competition. */
     public static boolean MAGNET_CORRECTION_ENABLED = true;
 
     /**
-     * Encoder ticks per full revolution of the indexer output (direct-drive => measure this!).
-     * Tune FIRST.
+     * Encoder ticks per full revolution of the indexer (direct drive).
+     * REV Core Hex motor is 288 ticks/rev (at the motor shaft).
+     * If you are truly direct-drive, this is usually correct: 288.
      */
     public static int TICKS_PER_REV = 288;
 
-    /** Magnet A center phase (0..TICKS_PER_REV-1). */
-    public static int MAG_A_PHASE = 70;
+    /**
+     * These are the PHASES (0..TICKS_PER_REV-1) where each LAUNCH magnet
+     * is CENTERED on the hall sensor.
+     *
+     * Tune these by slowly rotating and recording the center phase for each magnet.
+     */
+    public static int MAG_LAUNCH_1_PHASE = 0;
+    public static int MAG_LAUNCH_2_PHASE = 96;
+    public static int MAG_LAUNCH_3_PHASE = 192;
 
-    /** Magnet B center phase (0..TICKS_PER_REV-1). */
-    public static int MAG_B_PHASE = 168;
+    /** Accept a magnet only if the measured center is within this window of a known launch magnet phase. */
+    public static int MAGNET_WINDOW_TICKS = 40;
 
-    /** Accept magnet if within this many phase ticks. */
-    public static int MAGNET_WINDOW_TICKS = 75;
-
-    /** Debounce between magnet detections so one pass doesn't trigger multiple times. */
-    public static long MAGNET_DEBOUNCE_MS = 200;
-
-    /** Use rising edge as the detection edge. */
-    public static boolean USE_RISING_EDGE = true;
+    /** Debounce between detections so one pass doesn’t retrigger repeatedly. */
+    public static long MAGNET_DEBOUNCE_MS = 140;
 
     /**
-     * Offset so that:
-     *   virtualPhase = wrap(rawEncoder + phaseOffsetTicks)
-     * Magnets update this offset to prevent drift.
+     * Phase offset so that:
+     *   virtualPhase = wrap(rawEncoder + phaseOffsetTicks, TICKS_PER_REV)
+     * Magnets update this offset to eliminate encoder drift/slop accumulation.
      */
     public static int phaseOffsetTicks = 0;
 
     // ----------------------------
-    // SLOT PHASES (TUNABLE)
+    // Slot phases (tunable)
+    // Launch phases are on magnets (ABSOLUTE).
+    // Intake phases are between magnets (RELATIVE but stabilized by magnet offset snaps).
     // ----------------------------
 
-    // IMPORTANT: these are PHASES (0..TICKS_PER_REV-1), not raw encoder ticks
     public static int LAUNCH_1 = 0;
-    public static int LAUNCH_2 = 186;
-    public static int LAUNCH_3 = 79;
+    public static int LAUNCH_2 = 96;
+    public static int LAUNCH_3 = 192;
 
-    public static int INTAKE_1 = 141;
-    public static int INTAKE_2 = 33;
-    public static int INTAKE_3 = 235;
+    public static int INTAKE_1 = 159;
+    public static int INTAKE_2 = 54;
+    public static int INTAKE_3 = 250;
 
     // ----------------------------
-    // P-Controller Motion (NO RUN_TO_POSITION)
+    // P-controller Motion (NO RUN_TO_POSITION)
     // ----------------------------
 
-    /** Proportional gain in power-per-tick. Start: 0.006..0.02. */
-    public static double kP = 0.008;
+    /** Proportional gain in power-per-tick. Typical start: 0.01..0.03 */
+    public static double kP = 0.020;
 
-    /** Max motor power for phase moves. */
-    public static double maxPower = 0.35;
+    /** Maximum motor power for moves. */
+    public static double maxPower = 0.45;
 
     /** Minimum power to overcome stiction when far from target. */
     public static double minPower = 0.18;
 
     /** If |error| <= deadbandTicks, consider "arrived". */
-    public static int deadbandTicks = 6;
+    public static int deadbandTicks = 3;
 
     /** Require error to stay in deadband for this long before finishing. */
-    public static long settleMs = 80;
+    public static long settleMs = 90;
 
     /** Safety timeout for any move. */
-    public static long moveTimeoutMs = 1400;
+    public static long moveTimeoutMs = 1500;
 
-    /** If error is small, allow power to drop below minPower (prevents jitter). */
-    public static int minPowerDisableWithinTicks = 20;
+    /** Within this error, allow power to drop below minPower to prevent jitter. */
+    public static int minPowerDisableWithinTicks = 18;
 
     // ----------------------------
     // Lever pulse config
@@ -146,13 +146,19 @@ public class IndexerSubsystem {
     private double leverMaxPos = 0.6;
 
     // ----------------------------
-    // Magnet edge detection (internal)
+    // Magnet edge capture (internal)
+    // We compute CENTER using rising+falling edges to reduce delay/jitter.
     // ----------------------------
 
     @IgnoreConfigurable
     private boolean prevMagnetPressed = false;
     @IgnoreConfigurable
     private final ElapsedTime magnetDebounceTimer = new ElapsedTime();
+
+    @IgnoreConfigurable
+    private boolean haveRisingEdge = false;
+    @IgnoreConfigurable
+    private int risingEdgeRaw = 0;
 
     // ----------------------------
     // Motion state (internal)
@@ -175,7 +181,7 @@ public class IndexerSubsystem {
     private boolean inDeadband = false;
 
     // ----------------------------
-    // Debug (internal, exposed via getters)
+    // Debug fields (read via getters)
     // ----------------------------
 
     private int dbgRawEncoder = 0;
@@ -183,10 +189,15 @@ public class IndexerSubsystem {
     private int dbgVirtualPhase = 0;
     private int dbgError = 0;
 
+    private String dbgLastMagnetName = "none"; // "L1","L2","L3","reject"
     private int dbgLastMagnetPhase = 0;
-    private int dbgLastSnapError = 0; // <-- FIX 2: not static, accessed via getter
-    private String dbgLastMagnetName = "none";
+    private int dbgLastSnapError = 0;
+
     private boolean dbgMagnetPressed = false;
+
+    private int dbgRiseRaw = 0;
+    private int dbgFallRaw = 0;
+    private int dbgCenterRaw = 0;
 
     // ----------------------------
     // Constructor
@@ -209,7 +220,7 @@ public class IndexerSubsystem {
     }
 
     // ----------------------------
-    // Public API (called from TeleOp / other subsystems)
+    // Public API
     // ----------------------------
 
     /** Call once per loop. */
@@ -252,7 +263,7 @@ public class IndexerSubsystem {
         indexerMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    /** Nudge the target by phase ticks (used by CheckPatternSubsystem hole-avoidance). */
+    /** Nudge the target by phase ticks (used by CheckPatternSubsystem). */
     public void nudgeTicks(int deltaTicks) {
         if (TICKS_PER_REV <= 0) return;
         setTargetPhase(targetPhase + deltaTicks);
@@ -263,14 +274,18 @@ public class IndexerSubsystem {
         if (manualMode) {
             return Math.abs(manualPower) > 0.01;
         }
-        return motionState == MotionState.MOVING_PHASE;
+        if (motionState == MotionState.MOVING_PHASE) return true;
+        return false;
     }
 
     public int getCurrentPosition() {
         return indexerMotor.getCurrentPosition();
     }
 
-    /** For compatibility: returns a best-guess raw target corresponding to targetPhase near current position. */
+    /**
+     * Compatibility helper: best-guess raw target corresponding to targetPhase near current position.
+     * (TeleOp uses it only for telemetry; your motion uses P-control.)
+     */
     public int getTargetPosition() {
         if (TICKS_PER_REV <= 0) return indexerMotor.getCurrentPosition();
 
@@ -328,12 +343,15 @@ public class IndexerSubsystem {
     }
 
     // ----------------------------
-    // Magnet correction
+    // Magnet correction (3 magnets = 3 launch positions)
+    // Uses RISE+FALL center to reduce delay/jitter.
     // ----------------------------
 
     private void updateMagnetCorrection() {
         if (!MAGNET_CORRECTION_ENABLED) {
+            // keep edge detector in sync
             prevMagnetPressed = magnetSensor.isPressed();
+            haveRisingEdge = false;
             return;
         }
 
@@ -341,44 +359,69 @@ public class IndexerSubsystem {
         boolean rising = (!prevMagnetPressed && pressed);
         boolean falling = (prevMagnetPressed && !pressed);
 
-        boolean edge = false;
-        if (USE_RISING_EDGE) {
-            if (rising) edge = true;
-        } else {
-            if (falling) edge = true;
+        if (rising) {
+            haveRisingEdge = true;
+            risingEdgeRaw = indexerMotor.getCurrentPosition();
+            dbgRiseRaw = risingEdgeRaw;
         }
 
-        if (edge) {
-            if (magnetDebounceTimer.milliseconds() >= MAGNET_DEBOUNCE_MS) {
-                magnetDebounceTimer.reset();
-                snapOffsetToNearestMagnet();
+        if (falling) {
+            int fallRaw = indexerMotor.getCurrentPosition();
+            dbgFallRaw = fallRaw;
+
+            if (haveRisingEdge) {
+                haveRisingEdge = false;
+
+                // debounce on FULL pulse (rise->fall)
+                if (magnetDebounceTimer.milliseconds() >= MAGNET_DEBOUNCE_MS) {
+                    magnetDebounceTimer.reset();
+
+                    // center of the magnetic "pressed" window
+                    int centerRaw = (int) Math.round((risingEdgeRaw + fallRaw) / 2.0);
+                    dbgCenterRaw = centerRaw;
+
+                    snapOffsetFromCenter(centerRaw);
+                }
             }
         }
 
         prevMagnetPressed = pressed;
     }
 
-    private void snapOffsetToNearestMagnet() {
+    /**
+     * Use the measured centerRaw to snap phaseOffsetTicks so that the virtual phase
+     * aligns exactly to the nearest launch magnet phase.
+     */
+    private void snapOffsetFromCenter(int centerRaw) {
         if (TICKS_PER_REV <= 0) return;
 
-        int raw = indexerMotor.getCurrentPosition();
-        int rawPhase = wrap(raw, TICKS_PER_REV);
+        int centerPhase = wrap(centerRaw, TICKS_PER_REV);
 
-        int distA = Math.abs(shortestSignedDelta(rawPhase, wrap(MAG_A_PHASE, TICKS_PER_REV), TICKS_PER_REV));
-        int distB = Math.abs(shortestSignedDelta(rawPhase, wrap(MAG_B_PHASE, TICKS_PER_REV), TICKS_PER_REV));
+        int l1 = wrap(MAG_LAUNCH_1_PHASE, TICKS_PER_REV);
+        int l2 = wrap(MAG_LAUNCH_2_PHASE, TICKS_PER_REV);
+        int l3 = wrap(MAG_LAUNCH_3_PHASE, TICKS_PER_REV);
 
-        int expectedPhase;
+        int dist1 = Math.abs(shortestSignedDelta(centerPhase, l1, TICKS_PER_REV));
+        int dist2 = Math.abs(shortestSignedDelta(centerPhase, l2, TICKS_PER_REV));
+        int dist3 = Math.abs(shortestSignedDelta(centerPhase, l3, TICKS_PER_REV));
+
+        int expected;
         String name;
         int acceptDist;
 
-        if (distA <= distB) {
-            expectedPhase = wrap(MAG_A_PHASE, TICKS_PER_REV);
-            name = "A";
-            acceptDist = distA;
-        } else {
-            expectedPhase = wrap(MAG_B_PHASE, TICKS_PER_REV);
-            name = "B";
-            acceptDist = distB;
+        expected = l1;
+        name = "L1";
+        acceptDist = dist1;
+
+        if (dist2 < acceptDist) {
+            expected = l2;
+            name = "L2";
+            acceptDist = dist2;
+        }
+        if (dist3 < acceptDist) {
+            expected = l3;
+            name = "L3";
+            acceptDist = dist3;
         }
 
         if (acceptDist > MAGNET_WINDOW_TICKS) {
@@ -386,19 +429,20 @@ public class IndexerSubsystem {
             return;
         }
 
-        int desiredOffsetWrapped = wrap(expectedPhase - rawPhase, TICKS_PER_REV);
+        // desired offset so wrap(centerRaw + offset) == expected
+        int desiredOffsetWrapped = wrap(expected - centerPhase, TICKS_PER_REV);
         int currentOffsetWrapped = wrap(phaseOffsetTicks, TICKS_PER_REV);
 
         int delta = shortestSignedDelta(currentOffsetWrapped, desiredOffsetWrapped, TICKS_PER_REV);
         phaseOffsetTicks += delta;
 
         dbgLastMagnetName = name;
-        dbgLastMagnetPhase = expectedPhase;
-        dbgLastSnapError = delta; // <-- FIX 2 stored here
+        dbgLastMagnetPhase = expected;
+        dbgLastSnapError = delta;
     }
 
     // ----------------------------
-    // Motion (P-controller on phase)
+    // Motion (P-controller on virtual phase)
     // ----------------------------
 
     private void updateMotion() {
@@ -433,6 +477,7 @@ public class IndexerSubsystem {
 
             int absErr = Math.abs(err);
 
+            // deadband + settle
             if (absErr <= deadbandTicks) {
                 if (!inDeadband) {
                     inDeadband = true;
@@ -454,6 +499,7 @@ public class IndexerSubsystem {
             if (pwr > maxPower) pwr = maxPower;
             if (pwr < -maxPower) pwr = -maxPower;
 
+            // apply minPower only when far enough away (prevents jitter near target)
             if (absErr > minPowerDisableWithinTicks) {
                 if (pwr > 0.0 && pwr < minPower) pwr = minPower;
                 if (pwr < 0.0 && pwr > -minPower) pwr = -minPower;
@@ -485,43 +531,30 @@ public class IndexerSubsystem {
     }
 
     // ----------------------------
-    // Debug getters
+    // Debug getters (TeleOp uses these)
     // ----------------------------
 
-    public int getDbgRawPhase() {
-        return dbgRawPhase;
-    }
+    public int getDbgRawPhase() { return dbgRawPhase; }
+    public int getDbgVirtualPhase() { return dbgVirtualPhase; }
+    public int getDbgPhaseOffsetTicks() { return phaseOffsetTicks; }
+    public boolean getDbgMagnetPressed() { return dbgMagnetPressed; }
+    public String getDbgLastMagnetName() { return dbgLastMagnetName; }
+    public int getDbgLastSnapError() { return dbgLastSnapError; }
+    public int getDbgError() { return dbgError; }
 
-    public int getDbgVirtualPhase() {
-        return dbgVirtualPhase;
-    }
+    // Extra optional debug if you want to print them later
+    public int getDbgRiseRaw() { return dbgRiseRaw; }
+    public int getDbgFallRaw() { return dbgFallRaw; }
+    public int getDbgCenterRaw() { return dbgCenterRaw; }
+    public int getDbgLastMagnetPhase() { return dbgLastMagnetPhase; }
 
-    public int getDbgPhaseOffsetTicks() {
-        return phaseOffsetTicks;
-    }
-
-    public boolean getDbgMagnetPressed() {
-        return dbgMagnetPressed;
-    }
-
-    public String getDbgLastMagnetName() {
-        return dbgLastMagnetName;
-    }
-
-    public int getDbgLastSnapError() {
-        return dbgLastSnapError;
-    }
-
-    public int getDbgError() {
-        return dbgError;
-    }
-
-    // ----------------------------
-    // Status / telemetry string
-    // ----------------------------
+    public boolean getMagnetState() { return dbgMagnetPressed; }
 
     public String getStatus() {
         boolean busy = isMoving();
+        int mod = TICKS_PER_REV;
+        if (mod <= 0) mod = 1;
+
         return String.format(
                 "mode=%s busy=%s raw=%d rawPhase=%d vPhase=%d off=%d tgtPhase=%d err=%d lastMag=%s snap=%d manual=%s",
                 indexerMotor.getMode(),
@@ -530,16 +563,12 @@ public class IndexerSubsystem {
                 dbgRawPhase,
                 dbgVirtualPhase,
                 phaseOffsetTicks,
-                wrap(targetPhase, (TICKS_PER_REV <= 0 ? 1 : TICKS_PER_REV)),
+                wrap(targetPhase, mod),
                 dbgError,
                 dbgLastMagnetName,
                 dbgLastSnapError,
                 manualMode
         );
-    }
-
-    public boolean getMagnetState() {
-        return dbgMagnetPressed;
     }
 
     // ----------------------------
