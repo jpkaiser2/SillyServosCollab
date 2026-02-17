@@ -15,11 +15,11 @@ public class IntakeSubsystem {
     // Holds the last commanded intake angle position (0..1)
     private double intakeAnglePos = 0.5;
     private static final double ANGLE_DEADBAND = 0.05; // stick deadband to hold position
-    private static final double INTAKE_UP_POS = 1.0; // up position to avoid interference
-   
+    private static final double INTAKE_UP_POS = 0.75; // up position to avoid interference
+
     // Ramp direction: min = up, max = down
     private static final double RAMP_UP_POS = 0.2; // slightly above absolute min to avoid overtravel
-    private static final double RAMP_DOWN_POS = 1.0;  // full down
+    private static final double RAMP_DOWN_POS = 1.0; // full down
 
     // When true, intakeAngleServo is forced to the up position and held
     private boolean holdUp = false;
@@ -38,11 +38,11 @@ public class IntakeSubsystem {
         this.rampServo = null;
     }
 
-    //Overloaded constructor to include ramp servo control.
+    // Overloaded constructor to include ramp servo control.
     public IntakeSubsystem(HardwareMap hardwareMap,
-                           String intakeMotorName,
-                           String intakeAngleServoName,
-                           String rampServoName) {
+            String intakeMotorName,
+            String intakeAngleServoName,
+            String rampServoName) {
         this(hardwareMap, intakeMotorName, intakeAngleServoName);
         try {
             this.rampServo = hardwareMap.get(Servo.class, rampServoName);
@@ -56,7 +56,8 @@ public class IntakeSubsystem {
 
     /**
      * Update intake motor based on trigger inputs.
-     * @param inTrigger right trigger (intake forward)
+     * 
+     * @param inTrigger  right trigger (intake forward)
      * @param outTrigger left trigger (reverse)
      */
     public void setTriggers(double inTrigger, double outTrigger) {
@@ -90,7 +91,6 @@ public class IntakeSubsystem {
         }
         // else: hold previous intakeAnglePos
     }
-
 
     /** Edge-detect stage request button (e.g., gamepad2.a) */
     public void handleStageButton(boolean pressed) {
@@ -127,7 +127,9 @@ public class IntakeSubsystem {
     }
 
     /** Whether the intake angle is currently being held up. */
-    public boolean isHoldUp() { return holdUp; }
+    public boolean isHoldUp() {
+        return holdUp;
+    }
 
     // Ramp controls
     /** Set ramp to minimum (up). */
