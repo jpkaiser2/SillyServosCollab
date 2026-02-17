@@ -9,7 +9,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class CheckPatternSubsystem {
 
-    private enum State { IDLE, MOVE, SETTLE, SAMPLE, BLACK_NUDGE, DONE }
+    private enum State {
+        IDLE, MOVE, SETTLE, SAMPLE, BLACK_NUDGE, DONE
+    }
 
     private final IndexerSubsystem indexer;
     private final NormalizedColorSensor colorSensor;
@@ -19,7 +21,7 @@ public class CheckPatternSubsystem {
 
     // TeleOp expects these strings
     // possible values: "empty", "green", "purple", "unknown"
-    private final String[] indexerPattern = new String[]{"empty", "empty", "empty"};
+    private final String[] indexerPattern = new String[] { "empty", "empty", "empty" };
 
     // slot 0=Launch1, 1=Launch2, 2=Launch3
     private int slotIndex = 0;
@@ -49,7 +51,7 @@ public class CheckPatternSubsystem {
     private float hueSum = 0f, satSum = 0f, valSum = 0f;
 
     // for telemetry
-    private float[] lastHsv = new float[]{0f, 0f, 0f};
+    private float[] lastHsv = new float[] { 0f, 0f, 0f };
 
     public CheckPatternSubsystem(HardwareMap hardwareMap, IndexerSubsystem indexer, String colorSensorName) {
         this.indexer = indexer;
@@ -171,10 +173,17 @@ public class CheckPatternSubsystem {
 
     private void commandMove(int slot) {
         switch (slot) {
-            case 0: indexer.setIndexerPosition("Launch1"); break;
-            case 1: indexer.setIndexerPosition("Launch2"); break;
-            case 2: indexer.setIndexerPosition("Launch3"); break;
-            default: break;
+            case 0:
+                indexer.setIndexerPosition("Launch1");
+                break;
+            case 1:
+                indexer.setIndexerPosition("Launch2");
+                break;
+            case 2:
+                indexer.setIndexerPosition("Launch3");
+                break;
+            default:
+                break;
         }
     }
 
@@ -201,16 +210,22 @@ public class CheckPatternSubsystem {
         float avgVal = valSum / Math.max(1, sampleCount);
 
         boolean looksBlack = (avgVal <= blackValueMax) || (avgSat <= blackSaturationMax);
-        if (looksBlack) return "empty";
+        if (looksBlack)
+            return "empty";
 
-        if (isHueNear(avgHue, greenHue, hueTol)) return "green";
-        if (isHueNear(avgHue, purpleHue, purpleHueTol())) return "purple";
+        if (isHueNear(avgHue, greenHue, hueTol))
+            return "green";
+        if (isHueNear(avgHue, purpleHue, purpleHueTol()))
+            return "purple";
 
         return "unknown";
     }
 
-    // If purple tends to be noisier, need to slightly widen it without changing green.
-    private float purpleHueTol() { return hueTol; }
+    // If purple tends to be noisier, need to slightly widen it without changing
+    // green.
+    private float purpleHueTol() {
+        return hueTol;
+    }
 
     private boolean isHueNear(float hue, float target, float tol) {
         float d = Math.abs(hue - target);

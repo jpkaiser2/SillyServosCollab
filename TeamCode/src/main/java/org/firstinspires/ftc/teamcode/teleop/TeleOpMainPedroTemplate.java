@@ -18,20 +18,20 @@ import org.firstinspires.ftc.teamcode.subsystems.CheckPatternSubsystem;
 public class TeleOpMainPedroTemplate extends OpMode {
 
     // HardwareMap names
-    private static final String FRONT_LEFT   = "frontLeft";
-    private static final String FRONT_RIGHT  = "frontRight";
-    private static final String BACK_LEFT    = "backLeft";
-    private static final String BACK_RIGHT   = "backRight";
-    private static final String TURRET       = "turret";
+    private static final String FRONT_LEFT = "frontLeft";
+    private static final String FRONT_RIGHT = "frontRight";
+    private static final String BACK_LEFT = "backLeft";
+    private static final String BACK_RIGHT = "backRight";
+    private static final String TURRET = "turret";
     private static final String TURRET_ANGLE = "turretAngle";
-    private static final String INTAKE       = "intake";
+    private static final String INTAKE = "intake";
     private static final String INTAKE_ANGLE = "intakeAngle";
-    private static final String FEED_LEVER   = "feedLever";
-    private static final String INDEXER      = "indexer";
-    private static final String FLYWHEEL     = "flywheel";
-    private static final String RAMP         = "ramp";
+    private static final String FEED_LEVER = "feedLever";
+    private static final String INDEXER = "indexer";
+    private static final String FLYWHEEL = "flywheel";
+    private static final String RAMP = "ramp";
     private static final String COLOR_SENSOR = "sensor_color";
-    private static final String IMU          = "imu";
+    private static final String IMU = "imu";
 
     private DriveBase drive;
     private TurretSubsystem turret;
@@ -61,8 +61,8 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private boolean launching = false;
 
     // Patterns
-    private String[] wantedPattern = {"purple", "green", "purple"};
-    private String[] indexerPattern = {"empty", "empty", "empty"};
+    private String[] wantedPattern = { "purple", "green", "purple" };
+    private String[] indexerPattern = { "empty", "empty", "empty" };
     private boolean checkingPattern = false;
     private boolean autoLaunching = false;
 
@@ -86,23 +86,24 @@ public class TeleOpMainPedroTemplate extends OpMode {
 
         try {
             PanelsConfigurables.INSTANCE.refreshClass(indexer);
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
     }
 
     @Override
     public void loop() {
         // Convert bumpers to doubles
-        p1LeftBumperToDouble  = gamepad1.left_bumper  ? 1.0 : 0.0;
+        p1LeftBumperToDouble = gamepad1.left_bumper ? 1.0 : 0.0;
         p1RightBumperToDouble = gamepad1.right_bumper ? 1.0 : 0.0;
-        p2LeftBumperToDouble  = gamepad2.left_bumper  ? 1.0 : 0.0;
+        p2LeftBumperToDouble = gamepad2.left_bumper ? 1.0 : 0.0;
         p2RightBumperToDouble = gamepad2.right_bumper ? 1.0 : 0.0;
 
         override = gamepad2.left_trigger > triggerSense;
 
         // Drive
-        double y  = -gamepad1.left_stick_y;
-        double x  =  gamepad1.left_stick_x;
-        double rx =  gamepad1.right_stick_x;
+        double y = -gamepad1.left_stick_y;
+        double x = gamepad1.left_stick_x;
+        double rx = gamepad1.right_stick_x;
 
         drive.setDriverInput(x, y, rx, true);
         drive.update();
@@ -247,11 +248,11 @@ public class TeleOpMainPedroTemplate extends OpMode {
 
         // Set wanted pattern
         if (gamepad2.x) {
-            wantedPattern = new String[]{"green", "purple", "purple"};
+            wantedPattern = new String[] { "green", "purple", "purple" };
         } else if (gamepad2.a) {
-            wantedPattern = new String[]{"purple", "green", "purple"};
+            wantedPattern = new String[] { "purple", "green", "purple" };
         } else if (gamepad2.b) {
-            wantedPattern = new String[]{"purple", "purple", "green"};
+            wantedPattern = new String[] { "purple", "purple", "green" };
         }
 
         // Subsystem updates
@@ -274,13 +275,20 @@ public class TeleOpMainPedroTemplate extends OpMode {
         }
 
         // prevIndex edge tracking
-        if (gamepad1.dpad_left) prevIndex = "P1Left";
-        else if (gamepad1.dpad_down) prevIndex = "P1Down";
-        else if (gamepad1.dpad_right) prevIndex = "P1Right";
-        else if (gamepad2.dpad_left) prevIndex = "P2Left";
-        else if (gamepad2.dpad_down) prevIndex = "P2Down";
-        else if (gamepad2.dpad_right) prevIndex = "P2Right";
-        else prevIndex = "";
+        if (gamepad1.dpad_left)
+            prevIndex = "P1Left";
+        else if (gamepad1.dpad_down)
+            prevIndex = "P1Down";
+        else if (gamepad1.dpad_right)
+            prevIndex = "P1Right";
+        else if (gamepad2.dpad_left)
+            prevIndex = "P2Left";
+        else if (gamepad2.dpad_down)
+            prevIndex = "P2Down";
+        else if (gamepad2.dpad_right)
+            prevIndex = "P2Right";
+        else
+            prevIndex = "";
 
         // Telemetry (full)
         telemetry.addData("currentHue", pattern.getHsv()[0]);
@@ -321,7 +329,8 @@ public class TeleOpMainPedroTemplate extends OpMode {
         String printThis = "[";
         for (int i = 0; i < arr.length; i++) {
             printThis += arr[i];
-            if (i < arr.length - 1) printThis += ", ";
+            if (i < arr.length - 1)
+                printThis += ", ";
         }
         printThis += "]";
         return printThis;
