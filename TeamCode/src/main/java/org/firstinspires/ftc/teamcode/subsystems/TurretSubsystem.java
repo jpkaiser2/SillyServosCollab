@@ -104,6 +104,11 @@ public class TurretSubsystem {
     }
     // else: hold previous angleServoPos
 
+    /** Set hood angle servo position directly (0..1) */
+    public void setHoodPosition(double position) {
+        angleServoPos = clip(position, 0.0, 1.0);
+    }
+
     // ---- State access (what PID needs) ----
 
     public int getTurretTicks() {

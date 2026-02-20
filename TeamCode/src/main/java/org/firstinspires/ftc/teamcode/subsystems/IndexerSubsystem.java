@@ -93,8 +93,8 @@ public class IndexerSubsystem {
     // ----------------------------
 
     public static int LAUNCH_1 = 0;
-    public static int LAUNCH_2 = 96;
-    public static int LAUNCH_3 = 192;
+    public static int LAUNCH_3 = 96;
+    public static int LAUNCH_2 = 192;
 
     public static int INTAKE_1 = 159;
     public static int INTAKE_2 = 54;
@@ -108,7 +108,7 @@ public class IndexerSubsystem {
     public static double kP = 0.020;
 
     // Maximum motor power for moves.
-    public static double maxPower = 0.45;
+    public static double maxPower = 0.3;
 
     // Minimum power to overcome static friction when far from target.
     public static double minPower = 0.18;
@@ -249,6 +249,23 @@ public class IndexerSubsystem {
             return;
 
         setTargetPhase(phase);
+    }
+
+    // Slot index: 0=Launch1, 1=Launch2, 2=Launch3
+    public void moveToLaunchSlot(int slotIndex) {
+        switch (slotIndex) {
+            case 0:
+                setIndexerPosition("Launch1");
+                break;
+            case 1:
+                setIndexerPosition("Launch2");
+                break;
+            case 2:
+                setIndexerPosition("Launch3");
+                break;
+            default:
+                break;
+        }
     }
 
     // Set a desired phase (0..TICKS_PER_REV-1)

@@ -15,7 +15,7 @@ public class IntakeSubsystem {
     // Holds the last commanded intake angle position (0..1)
     private double intakeAnglePos = 0.5;
     private static final double ANGLE_DEADBAND = 0.05; // stick deadband to hold position
-    private static final double INTAKE_UP_POS = 0.75; // up position to avoid interference
+    private static final double INTAKE_UP_POS = 0.35; // up position to avoid interference
 
     // Ramp direction: min = up, max = down
     private static final double RAMP_UP_POS = 0.2; // slightly above absolute min to avoid overtravel

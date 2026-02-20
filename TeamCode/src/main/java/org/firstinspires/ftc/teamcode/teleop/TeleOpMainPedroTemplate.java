@@ -72,6 +72,17 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private double manualIndexerPower = 0.22;
     private double manualDeadband = 0.15;
 
+    // Indexer nudge
+    private int nudgeTickAmount = 12;
+    private boolean prevNudgeForward = false;
+    private boolean prevNudgeBackward = false;
+
+    // Hood positions for close/far launch
+    private double hoodClosePosition = 0.7;  // Hood up for close shots
+    private double hoodFarPosition = 0.2;    // Hood down for far shots
+    private boolean prevHoodClose = false;
+    private boolean prevHoodFar = false;
+
     @Override
     public void init() {
         HardwareMap hw = hardwareMap;
@@ -98,7 +109,9 @@ public class TeleOpMainPedroTemplate extends OpMode {
         p2LeftBumperToDouble = gamepad2.left_bumper ? 1.0 : 0.0;
         p2RightBumperToDouble = gamepad2.right_bumper ? 1.0 : 0.0;
 
-        override = gamepad2.left_trigger > triggerSense;
+        // FORCE OVERRIDE MODE (AUTO LAUNCHING DISABLED)
+        // override = gamepad2.left_trigger > triggerSense;
+        override = true;
 
         // Drive
         double y = -gamepad1.left_stick_y;
@@ -115,7 +128,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
             if (gamepad1.right_trigger > triggerSense) {
                 intake.setRotationInput(-0.5);
             } else if (gamepad1.right_bumper) {
-                intake.setRotationInput(0.5);
+                intake.setRotationInput(0.35);
             }
         }
 
@@ -128,7 +141,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
         }
         prevManualToggle = togglePressed;
 
-        if (manualIndexerMode) {
+        /*if (manualIndexerMode) {
             double stick = -gamepad2.left_stick_y; // up positive
 
             if (stick > manualDeadband) {
@@ -165,12 +178,29 @@ public class TeleOpMainPedroTemplate extends OpMode {
 
             telemetry.update();
             return;
-        }
+        }*/
 
         // ----------------------------
-        // Manual Indexer Presets (disabled during auto functions)
+        // Indexer Nudge (gamepad1.a = forward, gamepad1.b = backward)
         // ----------------------------
-        if (!(checkingPattern || autoLaunching)) {
+        boolean nudgeForward = gamepad2.x;
+        boolean nudgeBackward = gamepad2.b;
+
+        if (nudgeForward && !prevNudgeForward) {
+            indexer.nudgeTicks(nudgeTickAmount);
+        }
+        prevNudgeForward = nudgeForward;
+
+        if (nudgeBackward && !prevNudgeBackward) {
+            indexer.nudgeTicks(-nudgeTickAmount);
+        }
+        prevNudgeBackward = nudgeBackward;
+
+        // ----------------------------
+        // Manual Indexer Presets (ALWAYS ENABLED - AUTO LAUNCHING DISABLED)
+        // ----------------------------
+        // if (!(checkingPattern || autoLaunching)) {
+        if (true) {
             if (gamepad1.dpad_left && !"P1Left".equals(prevIndex)) {
                 indexer.setIndexerPosition("Intake1");
                 intakeHold = true;
@@ -202,6 +232,20 @@ public class TeleOpMainPedroTemplate extends OpMode {
             indexer.handleLeverButton(false);
         }
 
+        // Hood control for close/far launch
+        boolean hoodCloseTrigger = gamepad2.left_stick_button;
+        boolean hoodFarTrigger = gamepad2.right_stick_button;
+
+        if (hoodCloseTrigger && !prevHoodClose) {
+            turret.setHoodPosition(hoodClosePosition);
+        }
+        prevHoodClose = hoodCloseTrigger;
+
+        if (hoodFarTrigger && !prevHoodFar) {
+            turret.setHoodPosition(hoodFarPosition);
+        }
+        prevHoodFar = hoodFarTrigger;
+
         // Override / Auto logic
         if (override) {
             if (gamepad2.left_bumper || gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) {
@@ -218,6 +262,9 @@ public class TeleOpMainPedroTemplate extends OpMode {
 
             turret.updateManual(gamepad2.right_stick_x, gamepad2.left_stick_y, flywheelSpeed);
 
+        }
+        
+        /* AUTO LAUNCHING DISABLED - ALWAYS IN OVERRIDE MODE
         } else {
             if ((gamepad1.left_bumper || gamepad1.left_trigger > triggerSense) && !intakeHold) {
                 intake.setRampDown();
@@ -228,7 +275,9 @@ public class TeleOpMainPedroTemplate extends OpMode {
             launching = (gamepad2.right_bumper || gamepad2.right_trigger > triggerSense);
             turret.updateAutoTurret(launching);
         }
+        */
 
+        /* AUTO LAUNCHING DISABLED
         // Launch sequence (Y)
         if (gamepad2.y && !checkingPattern) {
             if (override && gamepad2.right_trigger > triggerSense && autoLaunching) {
@@ -245,6 +294,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
                 pattern.start();
             }
         }
+        */
 
         // Set wanted pattern
         if (gamepad2.x) {
@@ -257,6 +307,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
 
         // Subsystem updates
         indexer.update();
+        /* AUTO LAUNCHING DISABLED
         launch.update();
         pattern.update();
 
@@ -268,6 +319,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
         } else if (checkingPattern) {
             indexerPattern = pattern.getIndexerPattern();
         }
+        */
 
         if (!indexer.isMoving()) {
             intakeHold = false;
@@ -296,9 +348,9 @@ public class TeleOpMainPedroTemplate extends OpMode {
         telemetry.addData("magnetState", indexer.getMagnetState());
         telemetry.addData("indexerPosition", indexer.getCurrentPosition());
         telemetry.addData("wantedPattern", printStringArray(wantedPattern));
-        telemetry.addData("currentPattern", printStringArray(indexerPattern));
-        telemetry.addData("launching(auto)", autoLaunching);
-        telemetry.addData("checkingPattern", checkingPattern);
+        // telemetry.addData("currentPattern", printStringArray(indexerPattern));
+        // telemetry.addData("launching(auto)", autoLaunching);
+        // telemetry.addData("checkingPattern", checkingPattern);
         telemetry.addData("Drive", "x=%.2f y=%.2f rx=%.2f", x, y, rx);
         telemetry.addData("Turret", turret.getStatus());
         telemetry.addData("Intake", intake.getStatus());
