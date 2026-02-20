@@ -172,19 +172,7 @@ public class CheckPatternSubsystem {
     // ---------------- helpers ----------------
 
     private void commandMove(int slot) {
-        switch (slot) {
-            case 0:
-                indexer.setIndexerPosition("Launch1");
-                break;
-            case 1:
-                indexer.setIndexerPosition("Launch2");
-                break;
-            case 2:
-                indexer.setIndexerPosition("Launch3");
-                break;
-            default:
-                break;
-        }
+        indexer.moveToLaunchSlot(slot);
     }
 
     private void beginSampling() {

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import java.util.Arrays;
+
 public class LaunchSubsystem {
     private final IndexerSubsystem indexer;
     private boolean launching;
@@ -90,7 +92,7 @@ public class LaunchSubsystem {
         // go to the next position following the pattern
         for (int i = 0; i < indexerPattern.length; i++) {
             if (wantedPattern[launchNumber - 1].equals(indexerPattern[i])) {
-                indexer.setIndexerPosition("Launch" + (i + 1));
+                indexer.moveToLaunchSlot(i);
                 position = i;
                 return;
             }
@@ -100,20 +102,24 @@ public class LaunchSubsystem {
         for (int i = 0; i < indexerPattern.length; i++) {
             if (indexerPattern[i].equals("purple") || indexerPattern[i].equals("green")
                     || indexerPattern[i].equals("unknown")) {
-                indexer.setIndexerPosition("Launch" + (i + 1));
+                indexer.moveToLaunchSlot(i);
                 position = i;
                 return;
             }
         }
 
-        // if no balls to launch, stop launching
+        // if no balls to launch, stop launching (duh)
         launching = false;
     }
 
     public void startLaunch(String[] wantedPattern, String[] indexerPattern) {
         launching = true;
-        this.wantedPattern = wantedPattern;
-        this.indexerPattern = indexerPattern;
+        step = 0;
+        moving = false;
+        pulsing = false;
+        position = 0;
+        this.wantedPattern = Arrays.copyOf(wantedPattern, wantedPattern.length);
+        this.indexerPattern = Arrays.copyOf(indexerPattern, indexerPattern.length);
     }
 
     public void stopLaunch() {
