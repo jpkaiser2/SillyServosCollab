@@ -73,7 +73,7 @@ public class TeleOpMainPedroTemplate extends OpMode {
     private double manualDeadband = 0.15;
 
     // Indexer nudge
-    private int nudgeTickAmount = 12;
+    private int nudgeTickAmount = 8;
     private boolean prevNudgeForward = false;
     private boolean prevNudgeBackward = false;
 

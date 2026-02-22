@@ -9,7 +9,7 @@ import com.pedropathing.paths.*;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
-@Autonomous(name = "Auto Forward 12in (Pedro)", group = "Auto")
+@Autonomous(name = "Auto Forward 24in (Pedro)", group = "Auto")
 public class AutoForward12 extends OpMode {
     private Follower follower;
     private Path forward12;
@@ -25,7 +25,7 @@ public class AutoForward12 extends OpMode {
     @Override
     public void start() {
         // Build a simple straight line 12 inches forward along +X with constant heading 0
-        forward12 = new Path(new BezierLine(new Pose(0, 0), new Pose(12, 0)));
+        forward12 = new Path(new BezierLine(new Pose(0, 0), new Pose(24, 0)));
         forward12.setConstantHeadingInterpolation(0);
         follower.activateAllPIDFs();
         follower.followPath(forward12);

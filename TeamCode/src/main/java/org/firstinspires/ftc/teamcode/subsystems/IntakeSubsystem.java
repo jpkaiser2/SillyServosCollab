@@ -19,7 +19,7 @@ public class IntakeSubsystem {
 
     // Ramp direction: min = up, max = down
     private static final double RAMP_UP_POS = 0.2; // slightly above absolute min to avoid overtravel
-    private static final double RAMP_DOWN_POS = 1.0; // full down
+    private static final double RAMP_DOWN_POS = 0.8; // full down
 
     // When true, intakeAngleServo is forced to the up position and held
     private boolean holdUp = false;
